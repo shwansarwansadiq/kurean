@@ -72,5 +72,6 @@ alter table stories enable row level security;
 alter table glossary enable row level security;
 
 -- Public site may read published stories
+drop policy if exists "public reads published stories" on stories;
 create policy "public reads published stories" on stories
   for select using (status = 'published');
