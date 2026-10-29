@@ -125,6 +125,12 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
 Kurean's brand and RTL rules above always win over generic skill advice. Impeccable's auto-check hooks are
 intentionally not installed.
 
+**Shwan's standing instruction: use all of these skills for every piece of UI work**, in this order:
+1. `taste-skill` for art direction before designing (within the Kurean brand).
+2. `impeccable` to shape the work, then `critique`/`audit` it, and a final `polish` pass before shipping.
+3. `emil-design-eng` for interaction details; `animate` for any motion, `review-animations` to check it,
+   `animation-performance` to keep it smooth on phones. Respect reduced-motion.
+
 ## Working conventions
 
 - Run `npm test`, `npm run typecheck` and `npx next build` before pushing.
