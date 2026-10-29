@@ -89,8 +89,18 @@ export async function scoreNew(): Promise<number> {
     .order("created_at", { ascending: false })
     .limit(40);
   if (error) throw error;
-  const items = (data ?? []) as unknown as ItemRow[];
-  if (!items.length) return 0;
+  const all = (data ?? []) as unknown as ItemRow[];
+
+  // A headline alone is not enough to write a real article; skip those before paying for scoring.
+  const thin = all.filter((i) => !hasEnoughSourceText(i.summary));
+  for (const item of thin) {
+    await db()
+      .from("raw_items")
+      .update({ status: "skipped", score: 0, score_reason: "korea_news · no source text, headline only" })
+      .eq("id", item.id);
+  }
+  const items = all.filter((i) => hasEnoughSourceText(i.summary));
+  if (!items.length) return thin.length;
 
   const out = await callTool({
     model: SCORE_MODEL,
@@ -113,7 +123,14 @@ export async function scoreNew(): Promise<number> {
       })
       .eq("id", item.id);
   }
-  return out.items.length;
+  return out.items.length + thin.length;
+}
+
+/** Minimum source text (beyond the headline) needed to write an article without padding. */
+export const MIN_SOURCE_CHARS = 120;
+
+export function hasEnoughSourceText(summary: string | null): boolean {
+  return (summary?.trim().length ?? 0) >= MIN_SOURCE_CHARS;
 }
 
 async function storiesToday(): Promise<number> {
@@ -154,6 +171,10 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
   let failed = 0;
 
   for (const item of items) {
+    if (!hasEnoughSourceText(item.summary)) {
+      await db().from("raw_items").update({ status: "skipped", score_reason: `${item.score_reason} · no source text` }).eq("id", item.id);
+      continue;
+    }
     const { category, sensitive } = parseScoreReason(item.score_reason);
     try {
       const story = await callTool({

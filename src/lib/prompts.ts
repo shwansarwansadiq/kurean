@@ -85,7 +85,8 @@ Hard rules:
 ${glossaryBlock(terms)}
 5. Rumours are never presented as facts. For dating, health, death, legal or scandal topics, state only what is confirmed and say who confirmed it.
 6. No emoji in the headline or body. Captions may use 1-3 emoji.
-7. Body: 150-300 words, short paragraphs separated by blank lines. No heading inside the body. Do not write the source credit in the body; the site adds it.
+7. Body: 120-300 words, short paragraphs separated by blank lines. No heading inside the body. Do not write the source credit in the body; the site adds it. If the facts only support a short article, write a short one: never pad.
+   Never write about the writing itself: no mention of the source text, of what information is missing, or that nothing was added. Readers only see the news.
 8. card_headline: the headline cut to at most 9 words for the image cards.
 9. key_points: exactly 3 short points (under 12 words each) for the TikTok details slide.
 10. Captions: Instagram (2-4 sentences, ends with a call to read more via the link in bio), Facebook (2-3 sentences), TikTok (1-2 sentences). Each caption ends with "سەرچاوە: <source name>".

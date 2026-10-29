@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ScoreSchema, StorySchema, glossaryBlock, scoreUserMessage, writeSystem, writeUserMessage } from "../src/lib/prompts";
-import { isForcedToolUnsupported, parseScoreReason } from "../src/lib/writer";
+import { hasEnoughSourceText, isForcedToolUnsupported, parseScoreReason } from "../src/lib/writer";
 
 describe("glossary in the writer prompt", () => {
   it("lists every term with its Sorani spelling", () => {
@@ -71,5 +71,19 @@ describe("isForcedToolUnsupported", () => {
   it("recognises the forced tool choice error", () => {
     expect(isForcedToolUnsupported(new Error('400 {"message":"tool_choice: type \\"tool\\" and \\"any\\" are not supported for this model."}'))).toBe(true);
     expect(isForcedToolUnsupported(new Error("credit balance is too low"))).toBe(false);
+  });
+});
+
+describe("hasEnoughSourceText", () => {
+  it("skips headline-only items", () => {
+    expect(hasEnoughSourceText(null)).toBe(false);
+    expect(hasEnoughSourceText("Short teaser.")).toBe(false);
+    expect(hasEnoughSourceText("x".repeat(150))).toBe(true);
+  });
+});
+
+describe("writer prompt", () => {
+  it("forbids talking about the writing process", () => {
+    expect(writeSystem([])).toContain("Never write about the writing itself");
   });
 });
