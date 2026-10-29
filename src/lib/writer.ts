@@ -1,7 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db, type GlossaryTerm, type Source } from "./db";
+import { needsSecondSource, primaryReport, relatedCandidates, totalSourceChars, type Report } from "./cluster";
 import {
   CATEGORIES,
+  SAME_STORY_SYSTEM,
+  SAME_STORY_TOOL,
+  SameStorySchema,
+  sameStoryUserMessage,
   SCORE_SYSTEM,
   SCORE_TOOL,
   ScoreSchema,
@@ -89,18 +94,9 @@ export async function scoreNew(): Promise<number> {
     .order("created_at", { ascending: false })
     .limit(40);
   if (error) throw error;
-  const all = (data ?? []) as unknown as ItemRow[];
-
-  // A headline alone is not enough to write a real article; skip those before paying for scoring.
-  const thin = all.filter((i) => !hasEnoughSourceText(i.summary));
-  for (const item of thin) {
-    await db()
-      .from("raw_items")
-      .update({ status: "skipped", score: 0, score_reason: "korea_news · no source text, headline only" })
-      .eq("id", item.id);
-  }
-  const items = all.filter((i) => hasEnoughSourceText(i.summary));
-  if (!items.length) return thin.length;
+  // Headline-only items are scored too: another source may carry the details of the same news.
+  const items = (data ?? []) as unknown as ItemRow[];
+  if (!items.length) return 0;
 
   const out = await callTool({
     model: SCORE_MODEL,
@@ -123,15 +119,54 @@ export async function scoreNew(): Promise<number> {
       })
       .eq("id", item.id);
   }
-  return out.items.length + thin.length;
+  return out.items.length;
 }
 
-/** Minimum source text (beyond the headline) needed to write an article without padding. */
+/** Minimum source text (beyond headlines), across all reports, needed to write an article without padding. */
 export const MIN_SOURCE_CHARS = 120;
 
 export function hasEnoughSourceText(summary: string | null): boolean {
   return (summary?.trim().length ?? 0) >= MIN_SOURCE_CHARS;
 }
+
+type PoolRow = ItemRow & { source_id: string; status: string };
+
+/** Reports of the same news from other sources in the last 48 hours, confirmed by the model. */
+async function findSameStory(item: ItemRow & { source_id: string }): Promise<PoolRow[]> {
+  const since = new Date(Date.now() - 48 * 3600_000).toISOString();
+  const { data, error } = await db()
+    .from("raw_items")
+    .select("id, url, title, summary, status, source_id, sources(name, trust)")
+    .neq("source_id", item.source_id)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(400);
+  if (error) throw error;
+  const candidates = relatedCandidates(item.title, (data ?? []) as unknown as PoolRow[]).map((c) => c.item);
+  if (!candidates.length) return [];
+
+  const out = await callTool({
+    model: SCORE_MODEL,
+    system: SAME_STORY_SYSTEM,
+    user: sameStoryUserMessage(
+      item,
+      candidates.map((c) => ({ title: c.title, summary: c.summary, source: c.sources.name })),
+    ),
+    tool: SAME_STORY_TOOL,
+    maxTokens: 1000,
+    parse: (x) => SameStorySchema.parse(x),
+  });
+  return [...new Set(out.same)].map((i) => candidates[i]).filter((c): c is PoolRow => Boolean(c));
+}
+
+const toReport = (r: ItemRow): Report => ({
+  id: r.id,
+  source: r.sources.name,
+  trust: r.sources.trust,
+  url: r.url,
+  title: r.title,
+  summary: r.summary,
+});
 
 async function storiesToday(): Promise<number> {
   const start = new Date();
@@ -155,39 +190,50 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
   const room = Math.min(PER_RUN, DAILY_LIMIT - (await storiesToday()));
   if (room <= 0) return { written: 0, failed: 0 };
 
+  // Take extra candidates: some turn out to be duplicates or too thin and are skipped.
   const { data, error } = await db()
     .from("raw_items")
-    .select("id, url, title, summary, score_reason, sources(name, trust)")
+    .select("id, url, title, summary, score_reason, source_id, sources(name, trust)")
     .eq("status", "scored")
     .order("score", { ascending: false })
     .order("published_at", { ascending: false })
-    .limit(room);
+    .limit(room * 4);
   if (error) throw error;
-  const items = (data ?? []) as unknown as (ItemRow & { score_reason: string })[];
+  const items = (data ?? []) as unknown as (ItemRow & { score_reason: string; source_id: string })[];
   if (!items.length) return { written: 0, failed: 0 };
 
   const terms = await glossary();
+  const handled = new Set<string>();
   let written = 0;
   let failed = 0;
 
   for (const item of items) {
-    if (!hasEnoughSourceText(item.summary)) {
-      await db().from("raw_items").update({ status: "skipped", score_reason: `${item.score_reason} · no source text` }).eq("id", item.id);
-      continue;
-    }
+    if (written >= room) break;
+    if (handled.has(item.id)) continue;
+    handled.add(item.id);
     const { category, sensitive } = parseScoreReason(item.score_reason);
     try {
+      const same = await findSameStory(item);
+
+      // Another source's report of this news is already in a story: don't write it twice.
+      if (same.some((s) => s.status === "written")) {
+        await db().from("raw_items").update({ status: "skipped", score_reason: `${item.score_reason} · already covered` }).eq("id", item.id);
+        continue;
+      }
+
+      const reports = [toReport(item), ...same.map(toReport)];
+      if (totalSourceChars(reports) < MIN_SOURCE_CHARS) {
+        await db().from("raw_items").update({ status: "skipped", score_reason: `${item.score_reason} · no source text` }).eq("id", item.id);
+        continue;
+      }
+      const primary = primaryReport(reports);
+      // Most trusted, most detailed report first, so the writer leans on it.
+      const ordered = [primary, ...reports.filter((r) => r !== primary)];
+
       const story = await callTool({
         model: WRITE_MODEL,
         system: writeSystem(terms),
-        user: writeUserMessage({
-          title: item.title,
-          summary: item.summary,
-          url: item.url,
-          source: item.sources.name,
-          category,
-          sensitive,
-        }),
+        user: writeUserMessage({ category, sensitive, reports: ordered }),
         tool: STORY_TOOL,
         maxTokens: 8000,
         parse: (x) => StorySchema.parse(x),
@@ -197,12 +243,16 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
         raw_item_id: item.id,
         category,
         ...story,
-        source_name: item.sources.name,
-        source_url: item.url,
-        needs_second_source: sensitive && item.sources.trust < 3,
+        source_name: primary.source,
+        source_url: primary.url,
+        sources: ordered.map((r) => ({ name: r.source, url: r.url, trust: r.trust })),
+        needs_second_source: needsSecondSource(sensitive, reports),
       });
       if (insertError) throw insertError;
-      await db().from("raw_items").update({ status: "written" }).eq("id", item.id);
+
+      const ids = reports.map((r) => r.id);
+      ids.forEach((id) => handled.add(id));
+      await db().from("raw_items").update({ status: "written" }).in("id", ids);
       written++;
     } catch (e) {
       console.error("write failed", item.id, e);

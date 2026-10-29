@@ -24,17 +24,19 @@ describe("messages", () => {
     ]);
     expect(msg).toBe("[0] (Soompi) A\n[1] (Yonhap News) B\n    details");
   });
-  it("marks sensitive stories and missing text", () => {
+  it("combines several reports and lists every source for the captions", () => {
     const msg = writeUserMessage({
-      title: "T",
-      summary: null,
-      url: "https://x.com",
-      source: "Soompi",
       category: "kpop",
       sensitive: true,
+      reports: [
+        { source: "SBS Star", trust: 3, url: "https://sbsstar.net/a", title: "T1", summary: "Full details." },
+        { source: "allkpop", trust: 1, url: "https://allkpop.com/b", title: "T2", summary: null },
+      ],
     });
     expect(msg).toContain("SENSITIVE");
-    expect(msg).toContain("only the headline is available");
+    expect(msg).toContain("Source names for the captions: SBS Star، allkpop");
+    expect(msg).toContain("Report 2 — allkpop (trust 1/3)");
+    expect(msg).toContain("Text: (headline only)");
     expect(msg).toContain("کەی-پۆپ");
   });
 });

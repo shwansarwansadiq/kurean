@@ -89,8 +89,9 @@ ${glossaryBlock(terms)}
    Never write about the writing itself: no mention of the source text, of what information is missing, or that nothing was added. Readers only see the news.
 8. card_headline: the headline cut to at most 9 words for the image cards.
 9. key_points: exactly 3 short points (under 12 words each) for the TikTok details slide.
-10. Captions: Instagram (2-4 sentences, ends with a call to read more via the link in bio), Facebook (2-3 sentences), TikTok (1-2 sentences). Each caption ends with "سەرچاوە: <source name>".
-11. hashtags: 4-8, mixing Sorani and English, e.g. #کەی_پۆپ #kpop.`;
+10. Captions: Instagram (2-4 sentences, ends with a call to read more via the link in bio), Facebook (2-3 sentences), TikTok (1-2 sentences). Each caption ends with "سەرچاوە: " followed by the source names given, separated by "، ".
+11. hashtags: 4-8, mixing Sorani and English, e.g. #کەی_پۆپ #kpop.
+12. You may receive several reports of the same news from different sources. Combine their facts into one article. If they disagree, use the more trusted source, or say plainly that reports differ.`;
 }
 
 export const StorySchema = z.object({
@@ -133,20 +134,53 @@ export const STORY_TOOL = {
   },
 };
 
-export function writeUserMessage(item: {
-  title: string;
-  summary: string | null;
-  url: string;
-  source: string;
+export function writeUserMessage(story: {
   category: (typeof CATEGORIES)[number];
   sensitive: boolean;
+  reports: { source: string; trust: number; url: string; title: string; summary: string | null }[];
 }): string {
-  return `Source: ${item.source}
-Link: ${item.url}
-Category: ${CATEGORY_LABELS[item.category]}
-${item.sensitive ? "This is a SENSITIVE topic: state only confirmed facts and who confirmed them.\n" : ""}
-Original headline: ${item.title}
+  const names = [...new Set(story.reports.map((r) => r.source))].join("، ");
+  const reports = story.reports
+    .map(
+      (r, i) => `Report ${i + 1} — ${r.source} (trust ${r.trust}/3)
+Link: ${r.url}
+Headline: ${r.title}
+Text: ${r.summary?.trim() || "(headline only)"}`,
+    )
+    .join("\n\n");
+  return `Category: ${CATEGORY_LABELS[story.category]}
+Source names for the captions: ${names}
+${story.sensitive ? "This is a SENSITIVE topic: state only confirmed facts and who confirmed them.\n" : ""}
+${reports}`;
+}
 
-Source text:
-${item.summary ?? "(only the headline is available; keep the article short and do not invent details)"}`;
+/* ---------- Same-story check across sources ---------- */
+
+export const SAME_STORY_SYSTEM = `You compare news headlines. Given one target report and a numbered list of candidates from other sites,
+pick only the candidates about the SAME specific news event (same people and same happening).
+Related but different news (e.g. another member of the same group, an earlier announcement, a different episode) does not count.`;
+
+export const SameStorySchema = z.object({ same: z.array(z.number().int()) });
+
+export const SAME_STORY_TOOL = {
+  name: "record_matches",
+  description: "Record which candidates report the same news event as the target.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      same: { type: "array", items: { type: "integer" }, description: "Candidate numbers about the same event; empty if none" },
+    },
+    required: ["same"],
+  },
+};
+
+export function sameStoryUserMessage(
+  target: { title: string; summary: string | null },
+  candidates: { title: string; summary: string | null; source: string }[],
+): string {
+  const clip = (s: string | null) => (s ? `\n    ${s.slice(0, 200)}` : "");
+  return `Target: ${target.title}${clip(target.summary)}
+
+Candidates:
+${candidates.map((c, i) => `[${i}] (${c.source}) ${c.title}${clip(c.summary)}`).join("\n")}`;
 }

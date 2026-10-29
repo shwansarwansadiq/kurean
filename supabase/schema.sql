@@ -47,8 +47,9 @@ create table if not exists stories (
   caption_facebook text not null,
   caption_tiktok text not null,
   hashtags text[] not null default '{}',
-  source_name text not null,
+  source_name text not null, -- the primary (most trusted) source
   source_url text not null,
+  sources jsonb not null default '[]'::jsonb, -- every source that reported this news: [{name, url, trust}]
   needs_second_source boolean not null default false,
   status text not null default 'pending' check (status in ('pending', 'approved', 'published', 'skipped', 'failed')),
   published_at timestamptz,
@@ -75,3 +76,6 @@ alter table glossary enable row level security;
 drop policy if exists "public reads published stories" on stories;
 create policy "public reads published stories" on stories
   for select using (status = 'published');
+
+-- Added after launch: credit every source that reported the same news
+alter table stories add column if not exists sources jsonb not null default '[]'::jsonb;
