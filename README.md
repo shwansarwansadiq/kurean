@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kurean · کوریەن
 
-## Getting Started
+Automated Sorani Kurdish news about Korean culture, published at kurean.news after one-tap approval.
 
-First, run the development server:
+This is **Phase 2, the engine**:
+
+| Part | File | What it does |
+| --- | --- | --- |
+| Collector | `src/lib/collector.ts` | Reads every active RSS source, skips duplicates and items older than 48 h, stores new headlines |
+| Scorer | `src/lib/writer.ts` → `scoreNew` | Claude Haiku scores headlines 0–10 for Kurdish K-culture fans, picks a category, flags sensitive topics |
+| Writer | `src/lib/writer.ts` → `writeBest` | Claude Sonnet writes the best items as new Sorani articles, with card headline, 3 key points, captions and hashtags, using the glossary |
+| Schedule | `vercel.json` | Collect every 20 minutes; score and write at :10 every hour, max 2 per run and 8 per day |
+
+Finished stories land in the `stories` table with status `pending`. The approval dashboard (Phase 4) reads them from there.
+
+## Setup
+
+1. **Supabase**: create a project, open the SQL editor, run `supabase/schema.sql`, then `supabase/seed.sql`.
+2. **Vercel**: import this repo, add the variables from `.env.example` under Settings → Environment Variables, and deploy. Cron jobs start automatically.
+3. **Check it**: after the first runs, look at the `raw_items` table (headlines) and the `stories` table (written stories).
+
+To run a job by hand:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+curl -H "Authorization: Bearer $CRON_SECRET" https://kurean.news/api/cron/collect
+curl -H "Authorization: Bearer $CRON_SECRET" https://kurean.news/api/cron/write
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Rules the writer follows
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Writes a new article from the facts, never a sentence-by-sentence translation; at most one short quote.
+- Uses only facts in the source text; no invented numbers, dates or names.
+- Glossary spellings are mandatory; edit them in the `glossary` table.
+- Sensitive topics (dating, health, death, legal, scandal) state only confirmed facts. From a source below top trust they are marked `needs_second_source`.
+- Source credit is stored separately and added by the site and captions.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Development
 
-## Learn More
+```bash
+npm install
+npm test        # unit tests
+npm run typecheck
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Notes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Soompi, Yonhap, Korea Herald, Korea Times and Korea.net are seeded. Korea JoongAng Daily and KBS World have no confirmed public feed yet; add them when one is found.
+- Feed images are stored for reference only. Following the image rules, a photo is used only when it is marked as official press material.
