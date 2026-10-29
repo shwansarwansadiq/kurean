@@ -41,9 +41,24 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
 2. `writer.ts` → `scoreNew` — hourly at :10: Claude Haiku scores up to 40 new headlines 0–10, sets category
    (`kpop`, `kdrama_film`, `culture`, `korea_news`) and a sensitive flag; ≥7 becomes `scored`, else `skipped`.
 3. `writer.ts` → `writeBest` — writes at most 2 per run and 8 per day into `stories` (status `pending`):
-   headline, card_headline, body, 3 key_points, Instagram/Facebook/TikTok captions, hashtags, source.
-   Sensitive stories from a source below trust 3 get `needs_second_source = true`.
-4. Prompts and output schemas live in `prompts.ts`; tests in `tests/` (`npm test`).
+   headline, card_headline, body, 3 key_points, Instagram/Facebook/TikTok captions, hashtags, sources.
+   **Same-story check (`cluster.ts`):** before writing, finds headlines from other sources in the last 48 h that
+   share ≥2 meaningful words, and Haiku confirms which are the same news. Then:
+   - one of them is already `written` → skip as "already covered" (no duplicates);
+   - otherwise all reports are combined into one article; `stories.sources` lists every source
+     (`[{name,url,trust}]`), `source_name/source_url` = the most trusted, most detailed one;
+   - total source text under 120 chars across all reports → skip as "no source text" (never pad).
+   `needs_second_source` is true only for sensitive stories with a single source below trust 3.
+4. `callTool` forces tool use, and falls back to `tool_choice: auto` for models that refuse a forced tool
+   (the Sonnet writer does).
+5. Prompts and output schemas live in `prompts.ts`; tests in `tests/` (`npm test`).
+6. Run a job by hand from the Supabase SQL editor without exposing the secret:
+   `do $$ begin execute (select command from cron.job where jobname = 'kurean-write'); end $$;`
+   Results: `select status_code, content from net._http_response order by created desc limit 1;`
+   Errors: Vercel → project → Logs.
+
+Stories waiting now: #1 (Park Bo Gum MAMA) and #2 (KATSEYE tour) were written from allkpop headlines before the
+quality fixes and are thin — skip them in the dashboard. #3+ are written with the current rules.
 
 ## Sources
 

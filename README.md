@@ -2,6 +2,8 @@
 
 Automated Sorani Kurdish news about Korean culture, published at kurean.news after one-tap approval.
 
+**New here or moving to Claude Code? Read [START-HERE.md](START-HERE.md).** Project rules and status: [CLAUDE.md](CLAUDE.md).
+
 This is **Phase 2, the engine**:
 
 | Part | File | What it does |
