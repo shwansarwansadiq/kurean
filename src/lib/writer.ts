@@ -44,17 +44,32 @@ async function callTool<T>(opts: {
   maxTokens: number;
   parse: (input: unknown) => T;
 }): Promise<T> {
-  const res = await ai().messages.create({
-    model: opts.model,
-    max_tokens: opts.maxTokens,
-    system: opts.system,
-    tools: [opts.tool],
-    tool_choice: { type: "tool", name: opts.tool.name },
-    messages: [{ role: "user", content: opts.user }],
-  });
+  const request = (toolChoice: Anthropic.MessageCreateParams["tool_choice"]) =>
+    ai().messages.create({
+      model: opts.model,
+      max_tokens: opts.maxTokens,
+      system: `${opts.system}\n\nAlways answer by calling the ${opts.tool.name} tool exactly once.`,
+      tools: [opts.tool],
+      tool_choice: toolChoice,
+      messages: [{ role: "user", content: opts.user }],
+    });
+
+  let res: Anthropic.Message;
+  try {
+    res = await request({ type: "tool", name: opts.tool.name });
+  } catch (e) {
+    // Some models refuse a forced tool choice; let them choose, the prompt still requires the tool.
+    if (!isForcedToolUnsupported(e)) throw e;
+    res = await request({ type: "auto" });
+  }
   const block = res.content.find((b) => b.type === "tool_use");
   if (!block || block.type !== "tool_use") throw new Error("model returned no tool call");
   return opts.parse(block.input);
+}
+
+export function isForcedToolUnsupported(e: unknown): boolean {
+  const message = e instanceof Error ? e.message : String(e);
+  return message.includes("tool_choice") && message.includes("not supported");
 }
 
 type ItemRow = {
@@ -153,7 +168,7 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
           sensitive,
         }),
         tool: STORY_TOOL,
-        maxTokens: 3000,
+        maxTokens: 8000,
         parse: (x) => StorySchema.parse(x),
       });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ScoreSchema, StorySchema, glossaryBlock, scoreUserMessage, writeSystem, writeUserMessage } from "../src/lib/prompts";
-import { parseScoreReason } from "../src/lib/writer";
+import { isForcedToolUnsupported, parseScoreReason } from "../src/lib/writer";
 
 describe("glossary in the writer prompt", () => {
   it("lists every term with its Sorani spelling", () => {
@@ -64,5 +64,12 @@ describe("parseScoreReason", () => {
     expect(parseScoreReason("kdrama_film · sensitive · dating rumour")).toEqual({ category: "kdrama_film", sensitive: true });
     expect(parseScoreReason("kpop · big comeback")).toEqual({ category: "kpop", sensitive: false });
     expect(parseScoreReason("weird")).toEqual({ category: "korea_news", sensitive: false });
+  });
+});
+
+describe("isForcedToolUnsupported", () => {
+  it("recognises the forced tool choice error", () => {
+    expect(isForcedToolUnsupported(new Error('400 {"message":"tool_choice: type \\"tool\\" and \\"any\\" are not supported for this model."}'))).toBe(true);
+    expect(isForcedToolUnsupported(new Error("credit balance is too low"))).toBe(false);
   });
 });
