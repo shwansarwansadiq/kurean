@@ -6,9 +6,17 @@ insert into sources (name, feed_url, site_url, category_hint, trust) values
   ('Korea Herald', 'https://www.koreaherald.com/rss/newsAll', 'https://www.koreaherald.com', 'mixed', 3),
   ('Korea Times', 'https://feed.koreatimes.co.kr/k/allnews.xml', 'https://www.koreatimes.co.kr', 'mixed', 3),
   ('Korea.net Culture', 'https://www.korea.net/koreanet/rss/news/7', 'https://www.korea.net', 'culture', 3),
-  ('Korea.net Food and Travel', 'https://www.korea.net/koreanet/rss/news/8', 'https://www.korea.net', 'culture', 3)
+  ('Korea.net Food and Travel', 'https://www.korea.net/koreanet/rss/news/8', 'https://www.korea.net', 'culture', 3),
+  ('SBS Star', 'https://sbsstar.net/rssfeed.xml', 'https://sbsstar.net', 'mixed', 3),
+  -- allkpop is fast but gossip-heavy: low trust, so sensitive stories need a second source
+  ('allkpop', 'https://www.allkpop.com/rss_xml/lab.php', 'https://www.allkpop.com', 'kpop', 1)
 on conflict (feed_url) do nothing;
--- Korea JoongAng Daily and KBS World have no confirmed public feed yet; add them from the dashboard once a feed URL is confirmed.
+
+-- These feeds block automated readers, so they stay paused rather than being worked around.
+update sources set active = false where name in ('Korea Times', 'Korea.net Culture', 'Korea.net Food and Travel');
+
+-- Checked and not added: Koreaboo (mostly clickbait gossip), Hancinema (bot check blocks automated readers).
+-- Korea JoongAng Daily and KBS World have no confirmed public feed yet.
 
 -- First 30 glossary terms (from the Glossary tab of the plan)
 insert into glossary (english, sorani, note) values
