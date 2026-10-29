@@ -9,21 +9,22 @@ This is **Phase 2, the engine**:
 | Collector | `src/lib/collector.ts` | Reads every active RSS source, skips duplicates and items older than 48 h, stores new headlines |
 | Scorer | `src/lib/writer.ts` → `scoreNew` | Claude Haiku scores headlines 0–10 for Kurdish K-culture fans, picks a category, flags sensitive topics |
 | Writer | `src/lib/writer.ts` → `writeBest` | Claude Sonnet writes the best items as new Sorani articles, with card headline, 3 key points, captions and hashtags, using the glossary |
-| Schedule | `vercel.json` | Collect every 20 minutes; score and write at :10 every hour, max 2 per run and 8 per day |
+| Schedule | `supabase/cron.sql` | Supabase calls the site: collect every 20 minutes; score and write at :10 every hour, max 2 per run and 8 per day |
 
 Finished stories land in the `stories` table with status `pending`. The approval dashboard (Phase 4) reads them from there.
 
 ## Setup
 
 1. **Supabase**: create a project, open the SQL editor, run `supabase/schema.sql`, then `supabase/seed.sql`.
-2. **Vercel**: import this repo, add the variables from `.env.example` under Settings → Environment Variables, and deploy. Cron jobs start automatically.
-3. **Check it**: after the first runs, look at the `raw_items` table (headlines) and the `stories` table (written stories).
+2. **Vercel**: import this repo, add the variables from `.env.example` under Settings → Environment Variables, and deploy.
+3. **Schedule**: in the Supabase SQL editor, run `supabase/cron.sql` after replacing `YOUR_SITE` and `YOUR_SECRET`. (Vercel's free plan only allows daily cron jobs, so Supabase runs the schedule instead.)
+4. **Check it**: after the first runs, look at the `raw_items` table (headlines) and the `stories` table (written stories).
 
 To run a job by hand:
 
 ```bash
-curl -H "Authorization: Bearer $CRON_SECRET" https://kurean.news/api/cron/collect
-curl -H "Authorization: Bearer $CRON_SECRET" https://kurean.news/api/cron/write
+curl -H "Authorization: Bearer $CRON_SECRET" https://YOUR_SITE/api/cron/collect
+curl -H "Authorization: Bearer $CRON_SECRET" https://YOUR_SITE/api/cron/write
 ```
 
 ## Rules the writer follows
