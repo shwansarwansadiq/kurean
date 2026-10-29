@@ -8,7 +8,8 @@ approve. **Nothing is ever published without his approval.**
 - Live site: https://kurean.vercel.app (domain kurean.news is bought, not yet connected)
 - Plan doc (decisions, sources, glossary tab): https://claude.ai/artifact/Cbapd6o1PLqdh6iYRNpsGP
 - Logo, post/story/TikTok templates (design canvas): https://claude.ai/artifact/49rPtou3u9Tv8Zfessh7FR
-- Social: @kurean.news on Instagram and TikTok, "KUREAN" Page on Facebook
+- Social: display name **KUREAN** on every platform; username/handle **@kurean.news** on Instagram, TikTok and Facebook.
+  Use "KUREAN" wherever a profile name appears and "@kurean.news" wherever a handle appears.
 
 ## Status
 
