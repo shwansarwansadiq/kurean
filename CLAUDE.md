@@ -93,6 +93,16 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
 - APIs cannot add link stickers to stories: put the short link in the design; the dashboard reminds Shwan to add
   the Instagram sticker by hand (~5 seconds).
 - Formats: feed 1080×1350, story 1080×1920 (safe zones top ~220px, bottom ~250px), TikTok carousel 1080×1920 × 3.
+- **Scenery stories (Shwan's request):** between every news story on Instagram and Facebook stories, post one
+  very high quality photo or ≤10 s video of Korea's nature or landmarks (alternate news → scenery → news).
+  - Source: Pexels API (needs a free `PEXELS_API_KEY`). Weekly search by named places (Gyeongbokgung, Jeju,
+    Seoraksan, Gamcheon, Bukchon, cherry blossom season…). Keep only vertical ≥1080×1920 photos and ≤10 s clips.
+  - Pexels rules: add creative effort (our overlay), no visible brand logos/trademarks, no bulk copying, never
+    use the content for datasets or model training.
+  - Shwan approves the library weekly in the dashboard (~20 items). No item repeats within 60 days.
+  - Overlay: place name in Sorani with 📍, small Kurean logo, credit "📷 <photographer> · Pexels".
+  - Table `scenery` (to add): id, pexels_id, kind (photo|video), url, width, height, duration, place_en,
+    place_ckb, photographer, photographer_url, status (pending|approved|rejected), last_posted_at.
 
 ## Design skills in this repo
 
