@@ -216,3 +216,21 @@
 .tt-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (max-width: 520px) { .tt { grid-template-columns: 1fr; } .tt-video { width: 100%; max-width: 280px; justify-self: center; } }
 .vid-prev { width: 300px; }
+
+/* Scheduling */
+.when { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn.sched { background: var(--plum); border-color: var(--plum); color: #fff; min-height: 52px; font-size: 15px; }
+@media (hover: hover) and (pointer: fine) { .btn.sched:hover { background: #3a2b50; } }
+.when-at summary { cursor: pointer; font-size: 13px; color: var(--ink-2); padding: 4px 0; }
+.when-at div { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.when-at input { flex: 1; min-height: 38px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font: inherit; direction: ltr; }
+.sched-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.sched-top .adm-note { margin: 0; flex: 1 1 280px; }
+.sched-day h2 { font-size: 16px; font-weight: 800; margin: 16px 0 8px; }
+.sched-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+.sched-time { font: 800 22px/1 var(--latin); color: var(--berry-deep); font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: center; }
+.sched-row .row-main { display: grid; gap: 4px; }
+.sched-row small { color: var(--ink-2); font: 500 12px/1.4 var(--latin); text-align: right; }
+.sched-cat { justify-self: start; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; }
+.sched-acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 560px) { .sched-row { grid-template-columns: auto minmax(0, 1fr); } .sched-acts { grid-column: 1 / -1; } .when { grid-template-columns: 1fr; } }

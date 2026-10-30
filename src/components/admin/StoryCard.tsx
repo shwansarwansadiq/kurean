@@ -1,12 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { findPhoto, publishStory, regenerateStory, skipStory } from "@/app/admin/actions";
+import { findPhoto, publishStory, regenerateStory, scheduleStory, skipStory } from "@/app/admin/actions";
 import { Bidi } from "@/components/Bidi";
 import { isSensitive, photoStatus, PLATFORM_LABEL, PLATFORMS, type AdminStory } from "@/lib/admin-data";
 import { CATEGORY_META, ku, soraniDate } from "@/lib/site";
+import { hawlerTime, toHawlerInput } from "@/lib/schedule";
 import { Submit } from "./Submit";
 
-export function StoryCard({ story }: { story: AdminStory }) {
+/** `nextSlot`: the next free posting time, shown on the schedule button. */
+export function StoryCard({ story, nextSlot }: { story: AdminStory; nextSlot: Date }) {
   const meta = CATEGORY_META[story.category];
   const sources = story.sources?.length ? story.sources : [{ name: story.source_name, url: story.source_url, trust: undefined }];
   const sensitive = isSensitive(story);
@@ -72,9 +74,23 @@ export function StoryCard({ story }: { story: AdminStory }) {
               </label>
             ))}
           </fieldset>
-          <Submit className="btn pub" busy="بڵاودەکرێتەوە… (تا یەک خولەک)">
-            بڵاوی بکەوە
-          </Submit>
+          <div className="when">
+            <Submit className="btn pub" busy="بڵاودەکرێتەوە… (تا یەک خولەک)" name="mode" value="now">
+              ئێستا بڵاوی بکەوە
+            </Submit>
+            <Submit className="btn sched" busy="دەخرێتە خشتەوە…" formAction={scheduleStory} name="mode" value="next">
+              بیخە خشتەوە · <span className="lat">{ku(hawlerTime(nextSlot))}</span>
+            </Submit>
+          </div>
+          <details className="when-at">
+            <summary>کاتێکی تر هەڵبژێرە</summary>
+            <div>
+              <input type="datetime-local" name="at" defaultValue={toHawlerInput(nextSlot)} step={300} aria-label="کاتی بڵاوکردنەوە (کاتی هەولێر)" />
+              <Submit className="btn small" busy="…" formAction={scheduleStory} name="mode" value="at">
+                لەم کاتەدا
+              </Submit>
+            </div>
+          </details>
         </form>
         <div className="acts">
           <Link href={`/admin/story/${story.id}`} className="btn">

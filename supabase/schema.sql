@@ -268,3 +268,7 @@ alter table stories add column if not exists video_url text;          -- MP4 in 
 alter table stories add column if not exists video_hash text;         -- which version of the story the video shows
 alter table stories add column if not exists video_made_at timestamptz;
 alter table stories add column if not exists tiktok_done boolean not null default false; -- Shwan posted it on TikTok
+-- Run once in the Supabase SQL editor. Scheduled publishing. Safe to run again.
+-- A scheduled story is status 'approved' with a time; the kurean-publish job publishes it when the time comes.
+alter table stories add column if not exists scheduled_at timestamptz;
+create index if not exists stories_scheduled_idx on stories (scheduled_at) where status = 'approved';

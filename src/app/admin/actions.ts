@@ -9,6 +9,8 @@ import { CATEGORY_KEYS, type CategoryKey } from "@/lib/site";
 import { collectPhotoOptions, refreshPhoto, regenerate } from "@/lib/writer";
 import { download, looksLikeAgencyPhoto, store } from "@/lib/photo";
 import { publishSocial } from "@/lib/social";
+import { publishApproved } from "@/lib/publish";
+import { fromHawlerInput, nextFreeSlot, spreadEvenly } from "@/lib/schedule";
 import { PLATFORMS } from "@/lib/admin-data";
 
 
@@ -51,22 +53,65 @@ export async function logout() {
   redirect("/admin/login");
 }
 
+const platformsOf = (form: FormData) => {
+  const list: string[] = PLATFORMS.filter((p) => form.get(`p_${p}`) === "on");
+  return list.includes("website") ? list : ["website", ...list];
+};
+
 export async function publishStory(form: FormData) {
   await requireAdmin();
   const id = idOf(form);
-  const platforms = PLATFORMS.filter((p) => form.get(`p_${p}`) === "on");
-  if (!platforms.includes("website")) platforms.unshift("website");
-  const { error } = await db()
-    .from("stories")
-    .update({ status: "published", published_at: new Date().toISOString(), platforms })
-    .eq("id", id)
-    .in("status", ["pending", "skipped"]);
-  if (error) throw error;
+  // From the queue, from Skipped, or "publish now" on a scheduled story.
+  await publishApproved(id, platformsOf(form), ["pending", "skipped", "approved"]);
   refreshSite(id);
-  // The site first, then social media: the cards link back to the published article.
-  await publishSocial(id, platforms);
   revalidatePath("/admin");
   revalidatePath("/admin/published");
+  revalidatePath("/admin/scheduled");
+}
+
+async function scheduledTimes(exceptId?: number): Promise<Date[]> {
+  const { data } = await db().from("stories").select("id, scheduled_at").eq("status", "approved").not("scheduled_at", "is", null);
+  return (data ?? []).filter((r) => r.id !== exceptId).map((r) => new Date(r.scheduled_at as string));
+}
+
+/** Approve a story for later: at the next free time, or at a time Shwan picks (Hawler time). */
+export async function scheduleStory(form: FormData) {
+  await requireAdmin();
+  const id = idOf(form);
+  const picked = fromHawlerInput(String(form.get("at") ?? ""));
+  const when = form.get("mode") === "at" && picked && picked.getTime() > Date.now() ? picked : nextFreeSlot(await scheduledTimes(id));
+  await db()
+    .from("stories")
+    .update({ status: "approved", scheduled_at: when.toISOString(), platforms: platformsOf(form) })
+    .eq("id", id)
+    .in("status", ["pending", "skipped", "approved"]);
+  revalidatePath("/admin");
+  revalidatePath("/admin/scheduled");
+}
+
+/** Re-space every scheduled story evenly from now through the posting hours, keeping their order. */
+export async function spreadSchedule() {
+  await requireAdmin();
+  const { data } = await db()
+    .from("stories")
+    .select("id")
+    .eq("status", "approved")
+    .not("scheduled_at", "is", null)
+    .order("scheduled_at", { ascending: true });
+  const ids = (data ?? []).map((r) => r.id as number);
+  const times = spreadEvenly(ids.length);
+  for (let i = 0; i < ids.length; i++) {
+    await db().from("stories").update({ scheduled_at: times[i].toISOString() }).eq("id", ids[i]).eq("status", "approved");
+  }
+  revalidatePath("/admin/scheduled");
+}
+
+/** Take a story off the schedule and back to the queue. */
+export async function unscheduleStory(form: FormData) {
+  await requireAdmin();
+  await db().from("stories").update({ status: "pending", scheduled_at: null }).eq("id", idOf(form)).eq("status", "approved");
+  revalidatePath("/admin");
+  revalidatePath("/admin/scheduled");
 }
 
 export async function retrySocial(form: FormData) {

@@ -51,3 +51,17 @@ select cron.schedule(
   );
   $$
 );
+
+-- Scheduled publishing: every 5 minutes, publish approved stories whose time has come. Added 30 Oct 2026 (migrate-010).
+select cron.unschedule(jobname) from cron.job where jobname = 'kurean-publish';
+select cron.schedule(
+  'kurean-publish',
+  '*/5 * * * *',
+  $$
+  select net.http_get(
+    url := 'https://YOUR_SITE/api/cron/publish',
+    headers := jsonb_build_object('Authorization', 'Bearer YOUR_SECRET'),
+    timeout_milliseconds := 300000
+  );
+  $$
+);

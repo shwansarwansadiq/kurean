@@ -33,6 +33,7 @@ export type AdminStory = {
   photo_options: { url: string; page: string; credit: string }[];
   gallery: { url: string; credit: string | null; page: string | null }[];
   kind?: string | null;
+  scheduled_at?: string | null;
   video_url?: string | null;
   video_made_at?: string | null;
   tiktok_done?: boolean;

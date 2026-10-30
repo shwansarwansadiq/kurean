@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db, type GlossaryTerm, type Source } from "./db";
+import { hawlerMidnight } from "./schedule";
 import { attachPhoto, sourcePhotoCandidates, type PhotoCandidate } from "./photo";
 import { needsSecondSource, primaryReport, relatedCandidates, totalSourceChars, type Report } from "./cluster";
 import {
@@ -30,8 +31,8 @@ export function parseScoreReason(reason: string): { category: Category; sensitiv
 export const SCORE_MODEL = process.env.KUREAN_SCORE_MODEL ?? "claude-haiku-5-5";
 export const WRITE_MODEL = process.env.KUREAN_WRITE_MODEL ?? "claude-sonnet-5-5";
 
-/** Stories prepared per day (the plan: 5-8). */
-export const DAILY_LIMIT = Number(process.env.KUREAN_DAILY_LIMIT ?? 8);
+/** Stories prepared per day, counted from midnight in Hawler (Shwan raised it from 8 to 12 on 30 Oct). */
+export const DAILY_LIMIT = Number(process.env.KUREAN_DAILY_LIMIT ?? 12);
 /** Lowest score worth writing. */
 export const MIN_SCORE = Number(process.env.KUREAN_MIN_SCORE ?? 7);
 /** Stories written per run, so one run stays well inside the time limit. */
@@ -170,13 +171,14 @@ const toReport = (r: ItemRow): Report => ({
   summary: r.summary,
 });
 
+/** News stories written since midnight in Hawler (the weekly chart story does not count). */
 async function storiesToday(): Promise<number> {
-  const start = new Date();
-  start.setUTCHours(0, 0, 0, 0);
+  const start = hawlerMidnight(new Date());
   const { count, error } = await db()
     .from("stories")
     .select("id", { count: "exact", head: true })
-    .gte("created_at", start.toISOString());
+    .gte("created_at", start.toISOString())
+    .neq("kind", "chart");
   if (error) throw error;
   return count ?? 0;
 }

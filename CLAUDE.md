@@ -33,12 +33,14 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
 - Env vars (set in Vercel, never commit): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (a `sb_secret_` key),
   `ANTHROPIC_API_KEY`, `CRON_SECRET`, `ADMIN_PASSWORD` (≥10 characters; Shwan sets it himself; changing it signs out).
   Local preview without a database: `KUREAN_FIXTURES=1 npm run dev` (sample stories; photos from `public/_dev/`, not committed).
-  Optional: `KUREAN_DAILY_LIMIT` (8), `KUREAN_MIN_SCORE` (7), `KUREAN_SCORE_MODEL`, `KUREAN_WRITE_MODEL`.
+  Optional: `KUREAN_DAILY_LIMIT` (12, counted from midnight Hawler time; the weekly chart story doesn't count),
+  `KUREAN_POST_FROM`/`KUREAN_POST_UNTIL` (9/23, scheduling window), `KUREAN_MIN_SCORE` (7), `KUREAN_SCORE_MODEL`, `KUREAN_WRITE_MODEL`.
 - Migrations: `supabase/migrate-002-site.sql` (photo, platforms, sticker columns + `story-images` storage bucket),
   `migrate-003-photos.sql` (photo licence flags), `migrate-004-social.sql` (`social_posts`),
   `migrate-005-photos-analytics.sql` (photo options, gallery, `analytics_events`, `kurean_analytics()`),
   `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids),
-  `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`), `migrate-009-video.sql` (video, tiktok_done). Env also: `META_TOKEN`.
+  `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`), `migrate-009-video.sql` (video, tiktok_done),
+  `migrate-010-schedule.sql` (`scheduled_at`). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -119,7 +121,11 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
 - `/n/<id>` short links (used in stories, since APIs can't add link stickers) · `/latest` for the Instagram bio
 - `/admin` approval dashboard (login required): story cards with Publish / Edit / Regenerate / Skip / pick platforms,
   Published list, "link stickers to add" checklist, Sources, Glossary, Logs.
-- Publish is immediate on approval (Shwan's choice).
+- Publish is immediate on approval (Shwan's choice), **or scheduled** (Shwan, 30 Oct): on each queue card
+  "بیخە خشتەوە · <time>" approves for the next free time (09:00–23:00 Hawler, ≥1 h apart, `lib/schedule.ts`), or pick a
+  time. Scheduled = status `approved` + `scheduled_at`; /admin/scheduled (خشتە) lists them by day with "spread evenly",
+  publish now, back to queue. Supabase job `kurean-publish` (every 5 min) → `/api/cron/publish` → `publishDue()` in
+  `lib/publish.ts` publishes the site and the chosen social media. Approval is the scheduling itself.
 - Stories #1 and #2 are set to skipped by `migrate-002-site.sql`.
 
 ## Website and dashboard (built)
