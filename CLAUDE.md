@@ -37,7 +37,7 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
 - Migrations: `supabase/migrate-002-site.sql` (photo, platforms, sticker columns + `story-images` storage bucket),
   `migrate-003-photos.sql` (photo licence flags), `migrate-004-social.sql` (`social_posts`),
   `migrate-005-photos-analytics.sql` (photo options, gallery, `analytics_events`, `kurean_analytics()`),
-  `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`). Env also: `META_TOKEN`.
+  `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -140,6 +140,11 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   same list request that page makes (KureanBot user agent; any refusal keeps the stored week). New songs get Latin and
   Sorani names once via Haiku (`chart_songs`). Covers are Circle Chart's 70 px thumbnails, linked, not copied.
   No translated title meanings under the songs (Shwan, 30 Oct): only the Latin title, artist, and artist in Sorani.
+  **Listening (Shwan, 30 Oct, chose both):** `lib/listen.ts` finds each song's official YouTube video (artist channel,
+  its "- Topic" channel or a known label channel; title must name the song; covers/lyrics/fancams refused) and its Spotify
+  track; `ChartPlayer.tsx` plays the chart in YouTube's own embedded player (youtube-nocookie, loaded on tap, always
+  visible ≥200 px, auto-next down the chart); Spotify is a link out. Env: `YOUTUBE_API_KEY`, `SPOTIFY_CLIENT_ID`,
+  `SPOTIFY_CLIENT_SECRET` (migrate-007). Quota: ≤40 YouTube searches a day; videos re-checked every 30 days.
   Melon was refused (robots.txt blocks it); Spotify's API no longer serves its Korea playlist to new apps.
 - **Analytics (`/admin/analytics`, from Shwan's spec 30 Oct):** first-party tracker `components/Tracker.tsx` → `/api/t`
   → `analytics_events`; no cookies, no IP stored; visitor = salted daily hash, or a stable random ID after consent

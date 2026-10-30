@@ -47,7 +47,7 @@ select cron.schedule(
   select net.http_get(
     url := 'https://YOUR_SITE/api/cron/chart',
     headers := jsonb_build_object('Authorization', 'Bearer YOUR_SECRET'),
-    timeout_milliseconds := 120000
+    timeout_milliseconds := 300000
   );
   $$
 );

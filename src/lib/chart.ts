@@ -8,6 +8,7 @@ import { z } from "zod";
 import { db } from "./db";
 import { FIXTURE_CHART, fixturesOn } from "./fixtures";
 import { callTool, SCORE_MODEL } from "./writer";
+import { refreshListenLinks } from "./listen";
 
 const ORIGIN = "https://circlechart.kr";
 const PAGE = `${ORIGIN}/page_chart/onoff.circle?nationGbn=T&serviceGbn=ALL`;
@@ -30,6 +31,8 @@ export type ChartEntry = {
   title_ckb?: string | null;
   artist_latin?: string | null;
   artist_ckb?: string | null;
+  youtube_id?: string | null;
+  spotify_id?: string | null;
 };
 
 export type ChartWeek = { id: string; year: number; week: number; period: string; entries: ChartEntry[]; fetched_at: string };
@@ -212,7 +215,7 @@ Use only the text you are given; add nothing else.`;
 export const isRomanized = (n: { title_latin?: string | null; artist_latin?: string | null }) =>
   !!n.title_latin && !!n.artist_latin && !HANGUL.test(n.title_latin) && !HANGUL.test(n.artist_latin);
 
-type Names = Pick<ChartEntry, "title_latin" | "title_ckb" | "artist_latin" | "artist_ckb">;
+type Names = Pick<ChartEntry, "title_latin" | "title_ckb" | "artist_latin" | "artist_ckb" | "youtube_id" | "spotify_id">;
 
 async function writeNames(songs: { title: string; artist: string }[]): Promise<Names[]> {
   const fallback = songs.map((s) => ({ title_latin: latinName(null, s.title), title_ckb: null, artist_latin: latinName(null, s.artist), artist_ckb: null }));
@@ -245,7 +248,9 @@ async function writeNames(songs: { title: string; artist: string }[]): Promise<N
 // ---------- Refresh (cron) and read (site) ----------
 
 /** Reads the current week; stores it when it is new or still missing names. Returns what happened. */
-export async function refreshChart(opts: { force?: boolean } = {}): Promise<{ ok: boolean; id?: string; stored?: boolean; named?: number; reason?: string }> {
+type RefreshResult = { ok: boolean; id?: string; stored?: boolean; named?: number; reason?: string; links?: Awaited<ReturnType<typeof refreshListenLinks>> };
+
+export async function refreshChart(opts: { force?: boolean } = {}): Promise<RefreshResult> {
   const chart = await fetchCircleChart();
   if (!chart) return { ok: false, reason: "Circle Chart did not answer; kept the chart we have" };
   const id = `${CHART_ID}-${chart.year}-${chart.week}`;
@@ -256,7 +261,7 @@ export async function refreshChart(opts: { force?: boolean } = {}): Promise<{ ok
   // Songs whose stored names are still in Korean letters are asked again.
   const knownIds = new Set((known ?? []).filter((k) => isRomanized(k)).map((k) => k.id as string));
   const fresh = chart.entries.filter((e) => !knownIds.has(e.id));
-  if (have && !fresh.length && !opts.force) return { ok: true, id, stored: false, named: 0 };
+  if (have && !fresh.length && !opts.force) return { ok: true, id, stored: false, named: 0, links: await refreshListenLinks(ids) };
 
   // New songs get their Kurdish-reader names in batches of 50.
   let named = 0;
@@ -281,7 +286,7 @@ export async function refreshChart(opts: { force?: boolean } = {}): Promise<{ ok
     fetched_at: new Date().toISOString(),
   });
   if (error) return { ok: false, id, reason: error.message };
-  return { ok: true, id, stored: true, named };
+  return { ok: true, id, stored: true, named, links: await refreshListenLinks(ids) };
 }
 
 /** The newest stored week with names joined in, or null. */
@@ -300,7 +305,7 @@ export async function latestChart(): Promise<ChartWeek | null> {
     const week = data as ChartWeek;
     const { data: names } = await db()
       .from("chart_songs")
-      .select("id, title_latin, title_ckb, artist_latin, artist_ckb")
+      .select("id, title_latin, artist_latin, artist_ckb, youtube_id, spotify_id")
       .in("id", week.entries.map((e) => e.id));
     const byId = new Map((names ?? []).map((n) => [n.id as string, n as Names]));
     week.entries = week.entries.map((e) => {

@@ -70,6 +70,8 @@ export const FIXTURE_CHART = {
       title_ckb: title_ckb || null,
       artist_latin,
       artist_ckb,
+      youtube_id: i % 5 === 4 ? null : "M7lc1UVf-VE",
+      spotify_id: i % 3 === 2 ? null : "4uLU6hMCjMI75M1A2tKUQC",
     };
   }),
 };

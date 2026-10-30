@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- album covers are Circle Chart's own 70 px thumbnails, shown at or below that size */
 import { periodDates, type ChartEntry, type ChartWeek } from "../lib/chart";
 import { ku } from "../lib/site";
+import { ChartPlayer, SpotifyIcon, type QueueItem } from "./ChartPlayer";
 
 const MONTHS = [
   "کانوونی دووەم", "شوبات", "ئازار", "نیسان", "ئایار", "حوزەیران",
@@ -60,17 +61,48 @@ function Cover({ e, size }: { e: ChartEntry; size: number }) {
   );
 }
 
+/** The cover, as a play button when there is an official video (a plain YouTube link without script). */
+function Play({ e, size }: { e: ChartEntry; size: number }) {
+  if (!e.youtube_id) return <Cover e={e} size={size} />;
+  return (
+    <a
+      className="kc-play"
+      href={`https://www.youtube.com/watch?v=${e.youtube_id}`}
+      data-yt={e.rank}
+      target="_blank"
+      rel="noopener"
+      aria-label={`لێدانی ${title(e)} · ${artist(e)}`}
+    >
+      <Cover e={e} size={size} />
+      <span className="kc-pi" aria-hidden="true">
+        <svg className="tri" viewBox="0 0 16 16"><path d="M5 3.5v9l7.5-4.5z" /></svg>
+        <span className="kc-eq"><i /><i /><i /></span>
+      </span>
+    </a>
+  );
+}
+
+function SpotifyLink({ e, label = false }: { e: ChartEntry; label?: boolean }) {
+  if (!e.spotify_id) return null;
+  return (
+    <a className={label ? "kc-sp wide" : "kc-sp"} href={`https://open.spotify.com/track/${e.spotify_id}`} target="_blank" rel="noopener" aria-label={`${title(e)} لە Spotify`}>
+      <SpotifyIcon />
+      {label ? <span className="lat">Spotify</span> : null}
+    </a>
+  );
+}
+
 const title = (e: ChartEntry) => e.title_latin || e.title;
 const artist = (e: ChartEntry) => e.artist_latin || e.artist;
 
 function Row({ e }: { e: ChartEntry }) {
   return (
-    <li className="kc-row" title={`${e.title} · ${e.artist}`}>
+    <li className="kc-row" data-rank={e.rank} title={`${e.title} · ${e.artist}`}>
       <span className="kc-n">
         {ku(e.rank)}
         <Move e={e} />
       </span>
-      <Cover e={e} size={44} />
+      <Play e={e} size={44} />
       <span className="kc-t">
         <b className="lat" dir="ltr">{title(e)}</b>
         <span className="kc-a">
@@ -78,6 +110,7 @@ function Row({ e }: { e: ChartEntry }) {
           {e.artist_ckb ? <span className="ckb"> · {e.artist_ckb}</span> : null}
         </span>
       </span>
+      <SpotifyLink e={e} />
     </li>
   );
 }
@@ -89,6 +122,9 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
   const top = rest.slice(0, 9);
   const more = rest.slice(9);
   const when = soraniPeriod(week.period);
+  const queue: QueueItem[] = week.entries
+    .filter((e) => e.youtube_id)
+    .map((e) => ({ rank: e.rank, yt: e.youtube_id!, title: title(e), artist: artist(e), spotify: e.spotify_id ?? null }));
   return (
     <section className="kchart" aria-labelledby="kchart-h">
       <div className="kc-in">
@@ -101,10 +137,17 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
             <span className="kc-bit">هەفتەی {ku(week.week)}</span>
             {when ? <span className="kc-bit">{when}</span> : null}
           </p>
+          {queue.length ? (
+            <a className="kc-all-btn" href={`https://www.youtube.com/watch?v=${queue[0].yt}`} data-yt-all="" target="_blank" rel="noopener">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" /></svg>
+              هەموو چارتەکە لێبدە
+              <small>{ku(queue.length)} گۆرانی</small>
+            </a>
+          ) : null}
         </header>
 
         <div className="kc-grid">
-          <figure className="kc-one" title={`${one.title} · ${one.artist}`}>
+          <figure className="kc-one" data-rank={1} title={`${one.title} · ${one.artist}`}>
             <div className="kc-one-top">
               <span className="kc-one-n" aria-label="یەکەم">{ku(1)}</span>
               <span className="kc-eq" aria-hidden="true"><i /><i /><i /><i /></span>
@@ -118,6 +161,17 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
                 {one.artist_ckb ? <small>{one.artist_ckb}</small> : null}
               </span>
             </figcaption>
+            {one.youtube_id || one.spotify_id ? (
+              <div className="kc-one-play">
+                {one.youtube_id ? (
+                  <a className="kc-listen" href={`https://www.youtube.com/watch?v=${one.youtube_id}`} data-yt={1} target="_blank" rel="noopener">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" /></svg>
+                    گوێی لێبگرە
+                  </a>
+                ) : null}
+                <SpotifyLink e={one} label />
+              </div>
+            ) : null}
           </figure>
 
           <ol className="kc-list kc-top" start={2}>
@@ -137,12 +191,13 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
           </details>
         ) : null}
 
+        <ChartPlayer queue={queue} />
         <p className="kc-credit">
           سەرچاوە:{" "}
           <a href="https://circlechart.kr/page_chart/onoff.circle?nationGbn=T&serviceGbn=ALL" rel="noopener" className="lat">
             Circle Chart
           </a>{" "}
-          (کۆمەڵەی ناوەڕۆکی مۆسیقای کۆریا)، هەر هەفتە خۆی نوێ دەبێتەوە. بەرگی ئەلبوومەکان هی خاوەنەکانیانە.
+          (کۆمەڵەی ناوەڕۆکی مۆسیقای کۆریا)، هەر هەفتە خۆی نوێ دەبێتەوە. بەرگی ئەلبوومەکان هی خاوەنەکانیانە. ڤیدیۆکان ڤیدیۆی فەرمیی هونەرمەند یان کۆمپانیاکەیانن و لە یوتیوبەوە لێدەدرێن.
         </p>
       </div>
     </section>
