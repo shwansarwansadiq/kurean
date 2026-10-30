@@ -57,7 +57,7 @@ function Promise_() {
       <Words text="بە کوردی" start={14} size={150} color={C.gold} />
       <div style={{ marginTop: 50, height: 14, width: `${flag * 100}%`, borderRadius: 999, background: `linear-gradient(90deg, ${C.berry}, ${C.gold})` }} />
       <div dir="rtl" style={{ marginTop: 40, opacity: useT(44, 14), font: `700 62px/1.55 ${SORANI}`, color: "rgba(255,255,255,0.85)" }}>
-        کەی-پۆپ، دراما، فیلم و کولتووری کۆری، هەموو ڕۆژێک بە سۆرانی
+        کەی-پۆپ، دراما، فیلم و کولتووری کۆری، هەموو ڕۆژێک بە کوردی
       </div>
     </AbsoluteFill>
   );
@@ -65,7 +65,7 @@ function Promise_() {
 
 /* 3 — the four categories, each its own album colour */
 const CATS = [
-  { label: "کەی-پۆپ", line: "گروپ و ئایدۆڵەکانت", colour: C.berry },
+  { label: "کەی-پۆپ", line: "گروپ و ئایدڵەکانت", colour: C.berry },
   { label: "دراما و فیلم", line: "زنجیرە و فیلمە نوێکان", colour: C.lilac },
   { label: "کولتوور", line: "خواردن، گەشت و ژیانی کۆری", colour: C.mint },
   { label: "هەواڵی کۆریا", line: "ئەوەی لە کۆریا ڕوودەدات", colour: C.blue },
@@ -138,12 +138,12 @@ function Clock({ city, time, note, bg, fg, start }: { city: string; time: string
 }
 function Clocks() {
   const f = useCurrentFrame();
-  const m = 40 + Math.floor(f / 20); // the minutes tick on
+  const m = 25 + Math.floor(f / 20); // the minutes tick on
   const mm = String(m % 60).padStart(2, "0");
   return (
     <AbsoluteFill style={{ background: C.plum, display: "flex", flexDirection: "column" }}>
-      <Clock city="ئێستا لە سیئۆڵ" time={`02:${mm}`} note="کاتی پەخشی دراماکانە" bg={C.plum} fg="#fff" start={0} />
-      <Clock city="ئێستا لە هەولێر" time={`20:${mm}`} note="کۆریا ٦ کاتژمێر لە پێشەوەیە" bg={C.gold} fg={C.plum} start={8} />
+      <Clock city="ئێستا لە سیئۆڵ" time={`20:${mm}`} note="کاتی پەخشی دراماکانە" bg={C.plum} fg="#fff" start={0} />
+      <Clock city="ئێستا لە هەولێر" time={`14:${mm}`} note="کۆریا ٦ کاتژمێر لە پێشەوەیە" bg={C.gold} fg={C.plum} start={8} />
     </AbsoluteFill>
   );
 }
