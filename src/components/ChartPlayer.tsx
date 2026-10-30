@@ -143,7 +143,7 @@ export function ChartPlayer({ queue }: { queue: QueueItem[] }) {
   const item = index === null ? null : queue[index];
   if (!queue.length) return null;
   return (
-    <div className="kp" data-open={open ? "" : undefined} role="region" aria-label="لێدەری چارت" aria-hidden={!open}>
+    <div className="kp" data-open={open ? "" : undefined} role="region" aria-label="لێدەری ڕیزبەندی" aria-hidden={!open}>
       <div className="kp-bar">
         {item ? (
           <>

@@ -58,6 +58,6 @@ describe("Circle Chart", () => {
     expect(soraniPeriod("2026.10.18~2026.10.24")).toBe("١٨ تا ٢٤ی تشرینی یەکەم");
     expect(soraniPeriod("2026.09.27~2026.10.03")).toBe("٢٧ی ئەیلوول تا ٣ی تشرینی یەکەم");
     expect(moveLabel({ move: "up", change: 3 })).toBe("٣ پلە سەرکەوت");
-    expect(moveLabel({ move: "new", change: 0 })).toBe("نوێ هاتە ناو چارتەکە");
+    expect(moveLabel({ move: "new", change: 0 })).toBe("نوێ هاتە ناو ڕیزبەندییەکە");
   });
 });

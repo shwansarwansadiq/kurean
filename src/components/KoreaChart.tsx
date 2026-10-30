@@ -18,7 +18,7 @@ export function soraniPeriod(period: string): string {
 }
 
 export function moveLabel(e: Pick<ChartEntry, "move" | "change">): string {
-  if (e.move === "new") return "نوێ هاتە ناو چارتەکە";
+  if (e.move === "new") return "نوێ هاتە ناو ڕیزبەندییەکە";
   if (e.move === "same") return "لە شوێنی خۆی ماوە";
   return `${ku(e.change)} پلە ${e.move === "up" ? "سەرکەوت" : "دابەزی"}`;
 }
@@ -140,14 +140,14 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
             {ku(week.entries.length)} گۆرانییەکەی ئەم هەفتەیەی کۆریا
           </h2>
           <p>
-            <span className="kc-bit">چارتی دیجیتاڵی <bdi className="lat">Circle Chart</bdi></span>
+            <span className="kc-bit">ڕیزبەندیی دیجیتاڵی <bdi className="lat">Circle Chart</bdi></span>
             <span className="kc-bit">هەفتەی {ku(week.week)}</span>
             {when ? <span className="kc-bit">{when}</span> : null}
           </p>
           {queue.length ? (
             <a className="kc-all-btn" href={`https://www.youtube.com/watch?v=${queue[0].yt}`} data-yt-all="" target="_blank" rel="noopener">
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" /></svg>
-              هەموو چارتەکە لێبدە
+              هەموو ڕیزبەندییەکە لێبدە
               <small>{ku(queue.length)} گۆرانی</small>
             </a>
           ) : null}
@@ -172,7 +172,7 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
                 {one.youtube_id ? (
                   <a className="kc-listen" href={`https://www.youtube.com/watch?v=${one.youtube_id}`} data-yt={1} target="_blank" rel="noopener">
                     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" /></svg>
-                    گوێی لێبگرە
+                    بیکەرەوە
                   </a>
                 ) : null}
                 <SpotifyLink e={one} label />
