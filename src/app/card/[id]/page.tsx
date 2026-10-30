@@ -12,7 +12,10 @@ export default async function Card({ params, searchParams }: { params: Promise<{
   const format = (await searchParams).f === "story" ? "story" : "feed";
   return (
     <main className="card-page">
-      <style>{`body{margin:0;background:#2a1e3b}.skip{display:none}.card-page{width:1080px}`}</style>
+      <style>{`html,body{margin:0;background:#2a1e3b}.skip{display:none}.card-page{width:1080px}
+        .sc .glass{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+        .sc .sc-panel{background:rgb(42 30 59 / 0.72)!important}
+        .sc *{animation:none!important}`}</style>
       <SocialCard story={story} format={format} full />
     </main>
   );

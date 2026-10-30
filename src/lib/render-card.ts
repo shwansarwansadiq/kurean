@@ -26,9 +26,9 @@ export async function renderCards(storyId: number, formats: CardFormat[] = ["fee
         await document.fonts.ready;
         await Promise.all([...document.images].map((i) => (i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; }))));
       });
-      const el = await page.$("#card");
-      if (!el) throw new Error(`card ${storyId} ${f} did not render`);
-      const jpg = (await el.screenshot({ type: "jpeg", quality: 92 })) as Uint8Array;
+      if (!(await page.$("#card"))) throw new Error(`card ${storyId} ${f} did not render`);
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const jpg = (await page.screenshot({ type: "jpeg", quality: 92, clip: { x: 0, y: 0, ...CARD_SIZE[f] } })) as Uint8Array;
       const path = `cards/story-${storyId}-${f}-${Date.now().toString(36)}.jpg`;
       const { error } = await db().storage.from("story-images").upload(path, jpg, { contentType: "image/jpeg", upsert: true });
       if (error) throw error;
