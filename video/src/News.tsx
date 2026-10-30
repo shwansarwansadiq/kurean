@@ -1,7 +1,7 @@
 /* A news story as a 9:16 video (11 s): the photo slowly zooms, the headline arrives word by word,
    the three key points follow, and the logo card closes. Safe zones: top 220 px, bottom 250 px. */
 import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame } from "remotion";
-import { C, EndCard, LATIN, Mark, SORANI, Sun, tokens, useSpring, useT, Wordmark } from "./brand";
+import { C, EndCard, LATIN, Mark, SAFE, SORANI, Sun, tokens, useSpring, useT, Wordmark } from "./brand";
 
 export type NewsProps = { headline: string; points: string[]; image: string | null; label: string; colour: string };
 
@@ -15,7 +15,7 @@ function Headline({ text, start }: { text: string; start: number }) {
   const f = useCurrentFrame();
   const words = tokens(text);
   return (
-    <h1 dir="rtl" style={{ margin: 0, font: `900 92px/1.42 ${SORANI}`, color: "#fff", textWrap: "balance" }}>
+    <h1 dir="rtl" style={{ margin: 0, font: `900 78px/1.42 ${SORANI}`, color: "#fff", textWrap: "balance" }}>
       {words.map((w, i) => {
         const t = interpolate(f, [start + i * 4, start + i * 4 + 12], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
         return (
@@ -23,7 +23,7 @@ function Headline({ text, start }: { text: string; start: number }) {
             key={i}
             style={{
               display: "inline-block",
-              marginInlineEnd: "0.28em",
+              marginLeft: "0.28em", // physical: a Latin word is LTR, so its inline end would be on the wrong side
               opacity: t,
               transform: `translateY(${(1 - t) * 40}px)`,
               filter: `blur(${(1 - t) * 8}px)`,
@@ -58,7 +58,7 @@ function Point({ text, index, start }: { text: string; index: number; start: num
       <span style={{ flex: "none", width: 76, height: 76, borderRadius: 999, background: C.gold, color: C.plum, display: "grid", placeItems: "center", font: `900 44px/1 ${SORANI}` }}>
         {"١٢٣"[index]}
       </span>
-      <span style={{ font: `800 54px/1.5 ${SORANI}`, color: "#fff" }}>
+      <span style={{ font: `800 46px/1.5 ${SORANI}`, color: "#fff" }}>
         {tokens(text).map((w, i) => (
           <span key={i} style={w.latin ? { fontFamily: LATIN, fontWeight: 700, direction: "ltr", unicodeBidi: "isolate" } : undefined}>
             {w.t}{" "}
@@ -95,7 +95,7 @@ export function News({ headline, points, image, label, colour }: NewsProps) {
       <AbsoluteFill style={{ background: C.plum, opacity: shade }} />
 
       {/* Top: logo and category */}
-      <div style={{ position: "absolute", top: 220, left: 64, right: 64, display: "flex", justifyContent: "space-between", alignItems: "center", opacity: top, transform: `translateY(${(1 - top) * -60}px)` }}>
+      <div style={{ position: "absolute", top: SAFE.top, left: SAFE.left, right: SAFE.right, display: "flex", justifyContent: "space-between", alignItems: "center", opacity: top, transform: `translateY(${(1 - top) * -60}px)` }}>
         <span style={{ font: `800 40px/1 ${SORANI}`, color: "#fff", background: colour, padding: "22px 34px 26px", borderRadius: 999, border: "2px solid rgba(255,255,255,0.4)" }}>{label}</span>
         <span dir="ltr" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Mark size={92} start={10} />
@@ -107,9 +107,9 @@ export function News({ headline, points, image, label, colour }: NewsProps) {
       <div
         style={{
           position: "absolute",
-          left: 48,
-          right: 48,
-          bottom: 280,
+          left: SAFE.left - 16,
+          right: SAFE.right - 20,
+          bottom: SAFE.bottom,
           padding: "52px 56px 56px",
           borderRadius: 56,
           background: "rgba(42,30,59,0.62)",
@@ -123,7 +123,7 @@ export function News({ headline, points, image, label, colour }: NewsProps) {
 
       {/* Key points */}
       {f >= POINTS_AT - 4 ? (
-        <div style={{ position: "absolute", left: 48, right: 48, bottom: 300, display: "flex", flexDirection: "column", gap: 26 }}>
+        <div style={{ position: "absolute", left: SAFE.left - 16, right: SAFE.right - 20, bottom: SAFE.bottom, display: "flex", flexDirection: "column", gap: 22 }}>
           {points.slice(0, 3).map((p, i) => (
             <Point key={i} text={p} index={i} start={POINTS_AT} />
           ))}

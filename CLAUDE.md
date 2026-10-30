@@ -196,7 +196,8 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   #1 on berry). GitHub Actions `render-videos.yml` (every 15 min, free on this public repo) asks `/api/video/jobs`,
   renders, uploads to `story-images/video/`, reports to `/api/video/done`. Auth = GitHub OIDC token checked in
   `lib/video.ts` (repo + main + workflow), no shared secret. A video is remade when what it shows changes
-  (`video_hash`; bump `DESIGN_VERSION` after design changes). /admin/tiktok: download, copy caption, mark posted
+  (`video_hash`; bump `DESIGN_VERSION` after design changes). All text stays inside TikTok's safe area
+  (`SAFE` in `video/src/brand.tsx`: top 230, right 180, bottom 470, left 64; Shwan, 30 Oct). /admin/tiktok: download, copy caption, mark posted
   (`tiktok_done`); Shwan posts from his phone and adds a trending sound in TikTok (never K-pop audio in the file).
   Edit page previews the video. Not yet: posting Reels automatically, TikTok Content Posting API. Remotion's licence is
   free for individuals and companies of up to 3 people. Local: `cd video && npx remotion studio src/index.ts`.

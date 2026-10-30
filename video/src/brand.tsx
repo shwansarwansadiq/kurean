@@ -27,6 +27,11 @@ export const WORD = '"Baloo 2", "Inter", sans-serif';
 
 export const easeOut = Easing.bezier(0.23, 1, 0.32, 1);
 
+/** TikTok/Reels safe area on 1080×1920: the top bar, the right-hand buttons (like, comment, share)
+    and the caption + username at the bottom cover these margins, so text and logos stay inside. */
+export const SAFE = { top: 230, right: 180, bottom: 470, left: 64 };
+export const safePad = `${SAFE.top}px ${SAFE.right}px ${SAFE.bottom}px ${SAFE.left}px`;
+
 /** 0→1 over [from, from+len] with the brand's ease-out. */
 export function useT(from: number, len: number) {
   const f = useCurrentFrame();
@@ -120,14 +125,14 @@ export function EndCard({ start }: { start: number }) {
   const word = useT(start + 26, 12);
   if (f < start) return null;
   return (
-    <div style={{ position: "absolute", inset: 0, background: C.plum, clipPath: `circle(${open}% at 50% 50%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 36 }}>
+    <div style={{ position: "absolute", inset: 0, background: C.plum, clipPath: `circle(${open}% at 50% 50%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 36, padding: safePad }}>
       <div style={{ position: "absolute", width: 1600, height: 1600, left: -260, top: 160, opacity: 0.12 }}>
         <Sun size={1600} grow={sunGrow} turn={(f - start) * 0.25} core={C.berry} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }} dir="ltr">
-        <Mark size={260} start={start + 8} />
+        <Mark size={220} start={start + 8} />
         <span style={{ opacity: word }}>
-          <Wordmark size={170} />
+          <Wordmark size={140} />
         </span>
       </div>
       <div dir="rtl" style={{ opacity: txt, transform: `translateY(${(1 - txt) * 30}px)`, font: `800 58px/1.5 ${SORANI}`, color: "#fff", textAlign: "center" }}>

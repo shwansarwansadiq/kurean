@@ -62,7 +62,7 @@ export function videoJob(s: Row): VideoJob | null {
   });
 }
 
-const DESIGN_VERSION = "v1"; // bump when the video designs change, to remake recent videos
+const DESIGN_VERSION = "v2"; // v2: TikTok safe area // bump when the video designs change, to remake recent videos
 
 function withHash(id: number, composition: VideoJob["composition"], props: Record<string, unknown>): VideoJob {
   const hash = createHash("sha256").update(DESIGN_VERSION + JSON.stringify({ composition, props })).digest("hex").slice(0, 16);

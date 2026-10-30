@@ -1,7 +1,7 @@
 /* The weekly chart as a 10 → 1 countdown (about 18 s). Each song gets its moment; number one lands on berry
    with the sun turning behind it; the logo card closes. Safe zones: top 220 px, bottom 250 px. */
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
-import { C, EndCard, ku, LATIN, Mark, SORANI, Sun, tokens, useSpring, useT, Wordmark, easeOut } from "./brand";
+import { C, EndCard, ku, LATIN, Mark, SAFE, SORANI, Sun, tokens, useSpring, useT, Wordmark, easeOut } from "./brand";
 
 export type ChartItem = { rank: number; title: string; artist: string; artist_ckb: string | null; move: "up" | "down" | "same" | "new"; change: number };
 export type ChartProps = { week: number; top: ChartItem[] };
@@ -30,7 +30,7 @@ function MovePill({ m, big = false }: { m: ChartItem; big?: boolean }) {
 
 function Ladder({ current }: { current: number }) {
   return (
-    <div dir="rtl" style={{ position: "absolute", top: 330, left: 64, right: 64, display: "flex", justifyContent: "space-between" }}>
+    <div dir="rtl" style={{ position: "absolute", top: SAFE.top + 110, left: SAFE.left, right: SAFE.right, display: "flex", justifyContent: "space-between" }}>
       {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((r) => {
         const on = r === current;
         const done = r > current;
@@ -38,8 +38,8 @@ function Ladder({ current }: { current: number }) {
           <span
             key={r}
             style={{
-              width: 80,
-              height: 80,
+              width: 70,
+              height: 70,
               borderRadius: 999,
               display: "grid",
               placeItems: "center",
@@ -67,9 +67,9 @@ function RankScene({ m, start }: { m: ChartItem; start: number }) {
   const out = interpolate(f, [start + STEP - 7, start + STEP], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOut });
   if (f < start || f >= start + STEP) return null;
   return (
-    <div dir="rtl" style={{ position: "absolute", left: 64, right: 64, top: 520, bottom: 300, display: "flex", flexDirection: "column", justifyContent: "center", gap: 34, opacity: 1 - out, transform: `translateX(${-out * 160}px)` }}>
-      <span style={{ font: `900 360px/0.9 ${SORANI}`, color: C.gold, transform: `scale(${1.6 - 0.6 * num})`, opacity: Math.min(1, num * 1.5), transformOrigin: "right center" }}>{ku(m.rank)}</span>
-      <b dir="ltr" style={{ font: `800 104px/1.08 ${LATIN}`, color: "#fff", textAlign: "right", letterSpacing: "-0.02em", opacity: title, transform: `translateY(${(1 - title) * 60}px)`, overflowWrap: "anywhere" }}>
+    <div dir="rtl" style={{ position: "absolute", left: SAFE.left, right: SAFE.right, top: SAFE.top + 220, bottom: SAFE.bottom, display: "flex", flexDirection: "column", justifyContent: "center", gap: 34, opacity: 1 - out, transform: `translateX(${-out * 160}px)` }}>
+      <span style={{ font: `900 300px/0.9 ${SORANI}`, color: C.gold, transform: `scale(${1.6 - 0.6 * num})`, opacity: Math.min(1, num * 1.5), transformOrigin: "right center" }}>{ku(m.rank)}</span>
+      <b dir="ltr" style={{ font: `800 88px/1.08 ${LATIN}`, color: "#fff", textAlign: "right", letterSpacing: "-0.02em", opacity: title, transform: `translateY(${(1 - title) * 60}px)`, overflowWrap: "anywhere" }}>
         {m.title}
       </b>
       <span style={{ font: `700 52px/1.4 ${SORANI}`, color: "rgba(255,255,255,0.8)", opacity: artist }}>
@@ -96,12 +96,12 @@ function NumberOne({ m, week }: { m: ChartItem; week: number }) {
       <div style={{ position: "absolute", left: -560, top: 140, opacity: 0.5 }}>
         <Sun size={2200} grow={burst} turn={(f - ONE_AT) * 0.4} core={C.gold} coreOpacity={0.35} />
       </div>
-      <div dir="rtl" style={{ position: "absolute", left: 64, right: 64, top: 470, bottom: 300, display: "flex", flexDirection: "column", justifyContent: "center", gap: 30 }}>
+      <div dir="rtl" style={{ position: "absolute", left: SAFE.left, right: SAFE.right, top: SAFE.top + 180, bottom: SAFE.bottom, display: "flex", flexDirection: "column", justifyContent: "center", gap: 30 }}>
         <span style={{ font: `800 50px/1 ${SORANI}`, color: C.plum, background: C.gold, alignSelf: "flex-start", padding: "20px 34px 26px", borderRadius: 999, opacity: rest }}>
           یەکەمی هەفتەی {ku(week)}
         </span>
-        <span style={{ font: `900 520px/0.85 ${SORANI}`, color: C.gold, transform: `scale(${0.4 + 0.6 * num})`, transformOrigin: "right center", textShadow: "0 30px 80px rgba(42,30,59,0.35)" }}>{ku(1)}</span>
-        <b dir="ltr" style={{ font: `800 128px/1.04 ${LATIN}`, color: "#fff", textAlign: "right", letterSpacing: "-0.03em", opacity: title, transform: `translateY(${(1 - title) * 70}px)`, overflowWrap: "anywhere" }}>
+        <span style={{ font: `900 400px/0.85 ${SORANI}`, color: C.gold, transform: `scale(${0.4 + 0.6 * num})`, transformOrigin: "right center", textShadow: "0 30px 80px rgba(42,30,59,0.35)" }}>{ku(1)}</span>
+        <b dir="ltr" style={{ font: `800 100px/1.04 ${LATIN}`, color: "#fff", textAlign: "right", letterSpacing: "-0.03em", opacity: title, transform: `translateY(${(1 - title) * 70}px)`, overflowWrap: "anywhere" }}>
           {m.title}
         </b>
         <span style={{ font: `800 58px/1.4 ${SORANI}`, color: "#fff", opacity: rest }}>
@@ -130,7 +130,7 @@ export function Chart({ week, top }: ChartProps) {
         <Sun size={1900} turn={f * 0.15} core={C.berry} />
       </div>
 
-      <div style={{ position: "absolute", top: 220, left: 64, right: 64, display: "flex", justifyContent: "space-between", alignItems: "center", opacity: head, transform: `translateY(${(1 - head) * -50}px)` }}>
+      <div style={{ position: "absolute", top: SAFE.top, left: SAFE.left, right: SAFE.right, display: "flex", justifyContent: "space-between", alignItems: "center", opacity: head, transform: `translateY(${(1 - head) * -50}px)` }}>
         <span style={{ font: `800 40px/1 ${SORANI}`, color: C.plum, background: C.gold, padding: "22px 34px 26px", borderRadius: 999 }}>ڕیزبەندیی هەفتە</span>
         <span dir="ltr" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Mark size={88} start={6} />
@@ -144,8 +144,8 @@ export function Chart({ week, top }: ChartProps) {
 
       {/* Intro title */}
       {f < INTRO ? (
-        <div dir="rtl" style={{ position: "absolute", left: 64, right: 64, top: 640, opacity: 1 - introOut }}>
-          <h1 style={{ margin: 0, font: `900 150px/1.3 ${SORANI}`, color: "#fff" }}>
+        <div dir="rtl" style={{ position: "absolute", left: SAFE.left, right: SAFE.right, top: 560, opacity: 1 - introOut }}>
+          <h1 style={{ margin: 0, font: `900 124px/1.3 ${SORANI}`, color: "#fff" }}>
             {titleWords.map((w, i) => {
               const t = interpolate(f, [8 + i * 5, 20 + i * 5], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOut });
               return (
