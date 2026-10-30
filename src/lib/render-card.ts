@@ -3,6 +3,17 @@ import puppeteer from "puppeteer-core";
 import { db } from "./db";
 import { siteUrl } from "./site";
 
+// WebGL off: with it on, this Chromium build returns blank screenshots on Vercel.
+chromium.setGraphicsMode = false;
+
+async function launch() {
+  return puppeteer.launch({
+    args: await puppeteer.defaultArgs({ args: chromium.args, headless: "shell" }),
+    executablePath: process.env.CHROME_PATH || (await chromium.executablePath()),
+    headless: "shell",
+  });
+}
+
 export const CARD_SIZE = { feed: { width: 1080, height: 1350 }, story: { width: 1080, height: 1920 } } as const;
 export type CardFormat = keyof typeof CARD_SIZE;
 
@@ -12,7 +23,7 @@ export type CardFormat = keyof typeof CARD_SIZE;
  */
 /** What the headless browser sees on a card page (for /api/meta/check?debug=1). */
 export async function debugCard(storyId: number): Promise<unknown> {
-  const browser = await puppeteer.launch({ args: chromium.args, executablePath: process.env.CHROME_PATH || (await chromium.executablePath()), headless: true });
+  const browser = await launch();
   try {
     const page = await browser.newPage();
     const logs: string[] = [];
@@ -41,11 +52,7 @@ export async function debugCard(storyId: number): Promise<unknown> {
 }
 
 export async function renderCards(storyId: number, formats: CardFormat[] = ["feed", "story"]): Promise<Record<CardFormat, string>> {
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    executablePath: process.env.CHROME_PATH || (await chromium.executablePath()),
-    headless: true,
-  });
+  const browser = await launch();
   const out = {} as Record<CardFormat, string>;
   try {
     for (const f of formats) {
