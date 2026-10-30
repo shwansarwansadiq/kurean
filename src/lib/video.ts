@@ -70,10 +70,10 @@ function withHash(id: number, composition: VideoJob["composition"], props: Recor
   return { id, composition, props, hash };
 }
 
-type SceneryRow = { id: number; kind: string; url: string; place_en: string; place_ckb: string; photographer: string; music: string | null; video_hash: string | null };
+type SceneryRow = { id: number; kind: string; url: string; place_en: string; place_ckb: string; photographer: string; source: string | null; music: string | null; video_hash: string | null };
 
 export function sceneryJob(s: SceneryRow): VideoJob {
-  const props = { kind: s.kind, src: s.url, placeCkb: s.place_ckb, placeEn: s.place_en, photographer: s.photographer, music: s.music ?? "han-river" };
+  const props = { kind: s.kind, src: s.url, placeCkb: s.place_ckb, placeEn: s.place_en, photographer: s.photographer, source: s.source === "pixabay" ? "Pixabay" : "Pexels", music: s.music ?? "han-river" };
   const hash = createHash("sha256").update(SCENERY_VERSION + JSON.stringify(props)).digest("hex").slice(0, 16);
   return { id: s.id, composition: "Scenery", props, hash, target: "scenery" };
 }
@@ -96,7 +96,7 @@ export async function videoJobs(limit = 3): Promise<(VideoJob & { upload: { path
   if (jobs.length < limit) {
     const { data: sc } = await db()
       .from("scenery")
-      .select("id, kind, url, place_en, place_ckb, photographer, music, video_hash")
+      .select("id, kind, url, place_en, place_ckb, photographer, source, music, video_hash")
       .eq("status", "approved")
       .order("created_at", { ascending: true })
       .limit(60);

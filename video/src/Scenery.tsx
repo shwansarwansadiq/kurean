@@ -1,9 +1,9 @@
-/* A scenery story (8.5 s): a Korea landscape or landmark from Pexels with a slow drift, the place name in Sorani,
+/* A scenery story (8.5 s): a Korea landscape or landmark (Pixabay or Pexels) with a slow drift, the place name in Sorani,
    the photographer's credit, the Kurean mark, and one of Kurean's own music loops. Inside TikTok/Reels safe areas. */
 import { AbsoluteFill, Audio, Img, interpolate, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, easeOut, LATIN, Mark, SAFE, SORANI, useSpring, useT, Wordmark } from "./brand";
 
-export type SceneryProps = { kind: "photo" | "video"; src: string; placeCkb: string; placeEn: string; photographer: string; music: string };
+export type SceneryProps = { kind: "photo" | "video"; src: string; placeCkb: string; placeEn: string; photographer: string; source?: string; music: string };
 export const SCENERY_FRAMES = 255;
 
 const media = (src: string) => (/^https?:/.test(src) ? src : staticFile(src));
@@ -17,7 +17,7 @@ function Pin() {
   );
 }
 
-export function Scenery({ kind, src, placeCkb, placeEn, photographer, music }: SceneryProps) {
+export function Scenery({ kind, src, placeCkb, placeEn, photographer, source = "Pexels", music }: SceneryProps) {
   const f = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   const fadeIn = useT(0, 14);
@@ -73,7 +73,7 @@ export function Scenery({ kind, src, placeCkb, placeEn, photographer, music }: S
           </span>
         </div>
         <span dir="ltr" style={{ alignSelf: "flex-start", font: `600 28px/1 ${LATIN}`, color: "rgba(255,255,255,0.88)", opacity: credit, textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}>
-          Photo: {photographer} · Pexels
+          {kind === "video" ? "Video" : "Photo"}: {photographer} · {source}
         </span>
       </div>
       <AbsoluteFill style={{ background: C.plum, opacity: out }} />

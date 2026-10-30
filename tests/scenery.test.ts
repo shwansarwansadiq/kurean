@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { namesPlace, photoCandidate, videoCandidate } from "../src/lib/scenery";
+import { namesPlace, photoCandidate, pixabayCandidate, videoCandidate } from "../src/lib/scenery";
 import { PLACES } from "../src/lib/places";
 
 const palace = PLACES.find((p) => p.en.startsWith("Gyeongbokgung"))!;
@@ -31,5 +31,27 @@ describe("scenery candidates from Pexels", () => {
     expect(videoCandidate(v, palace)?.url).toBe("hd.mp4");
     expect(videoCandidate({ ...v, duration: 4 }, palace)).toBeNull();
     expect(videoCandidate({ ...v, video_files: v.video_files.slice(0, 1) }, palace)).toBeNull();
+  });
+});
+
+describe("scenery from Pixabay", () => {
+  const v = {
+    id: 5, pageURL: "https://pixabay.com/videos/gyeongbokgung-palace-seoul-5/", tags: "gyeongbokgung, palace, seoul", duration: 12,
+    user: "seoulwalker", user_id: 77,
+    videos: {
+      large: { url: "large.mp4", width: 2160, height: 3840 },
+      medium: { url: "medium.mp4", width: 1080, height: 1920 },
+      small: { url: "small.mp4", width: 720, height: 1280 },
+    },
+  };
+  it("takes the smallest full-HD vertical file of a video that names the place", () => {
+    const c = pixabayCandidate(v, palace)!;
+    expect(c.url).toBe("medium.mp4");
+    expect(c.source).toBe("pixabay");
+    expect(c.photographer_url).toBe("https://pixabay.com/users/seoulwalker-77/");
+  });
+  it("refuses wide videos and other places", () => {
+    expect(pixabayCandidate({ ...v, videos: { large: { url: "w.mp4", width: 3840, height: 2160 } } }, palace)).toBeNull();
+    expect(pixabayCandidate({ ...v, tags: "temple, kyoto", pageURL: "https://pixabay.com/videos/temple-5/" }, palace)).toBeNull();
   });
 });

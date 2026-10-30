@@ -40,7 +40,8 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
   `migrate-005-photos-analytics.sql` (photo options, gallery, `analytics_events`, `kurean_analytics()`),
   `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids),
   `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`), `migrate-009-video.sql` (video, tiktok_done),
-  `migrate-010-schedule.sql` (`scheduled_at`), `migrate-011-scenery.sql` (`scenery`, `social_queue`). Env also: `META_TOKEN`.
+  `migrate-010-schedule.sql` (`scheduled_at`), `migrate-011-scenery.sql` (`scenery`, `social_queue`),
+  `migrate-012-scenery-source.sql` (`scenery.source`). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -196,7 +197,8 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   ready clip in `social_queue` 20 min later (one waiting at a time; ≥60 days between repeats); the 5-min publish job
   posts it as IG + FB video stories (`instagramVideoStory`, `facebookVideoStory` in `meta.ts`). Music: four original
   loops composed in code for Kurean (`video/music-compose.py` → `video/public/music/*.m4a`: han-river, jeju-breeze,
-  seoul-night, blossom), so they are Kurean's own and royalty-free. Env: `PEXELS_API_KEY` (migrate-011).
+  seoul-night, blossom), so they are Kurean's own and royalty-free. Source: **Pixabay vertical videos**
+  (`PIXABAY_API_KEY`; Pexels paused new API keys on 31 Oct; Pexels code kept for `PEXELS_API_KEY`) (migrate-011, 012).
   Pexels rules: credit the photographer, our design on top, no bulk copying, never for model training.
 
 - **Motion videos (Shwan, 30 Oct):** every recent pending/published story gets a 9:16 MP4 (`video/`, Remotion 4):
