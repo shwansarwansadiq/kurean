@@ -82,10 +82,17 @@ function Play({ e, size }: { e: ChartEntry; size: number }) {
   );
 }
 
+/** The track when we know it; otherwise Spotify's own search for this song (no API key needed). */
+export function spotifyHref(e: ChartEntry): string {
+  if (e.spotify_id) return `https://open.spotify.com/track/${e.spotify_id}`;
+  const song = e.title.replace(/\((feat|prod|narr|with)\.?[^)]*\)/gi, "").trim();
+  const who = (e.artist_latin || e.artist).split(",")[0].replace(/\([^)]*\)/g, "").trim();
+  return `https://open.spotify.com/search/${encodeURIComponent(`${song} ${who}`)}`;
+}
+
 function SpotifyLink({ e, label = false }: { e: ChartEntry; label?: boolean }) {
-  if (!e.spotify_id) return null;
   return (
-    <a className={label ? "kc-sp wide" : "kc-sp"} href={`https://open.spotify.com/track/${e.spotify_id}`} target="_blank" rel="noopener" aria-label={`${title(e)} لە Spotify`}>
+    <a className={label ? "kc-sp wide" : "kc-sp"} href={spotifyHref(e)} target="_blank" rel="noopener" aria-label={`${title(e)} لە Spotify`}>
       <SpotifyIcon />
       {label ? <span className="lat">Spotify</span> : null}
     </a>
@@ -124,7 +131,7 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
   const when = soraniPeriod(week.period);
   const queue: QueueItem[] = week.entries
     .filter((e) => e.youtube_id)
-    .map((e) => ({ rank: e.rank, yt: e.youtube_id!, title: title(e), artist: artist(e), spotify: e.spotify_id ?? null }));
+    .map((e) => ({ rank: e.rank, yt: e.youtube_id!, title: title(e), artist: artist(e), spotify: spotifyHref(e) }));
   return (
     <section className="kchart" aria-labelledby="kchart-h">
       <div className="kc-in">
@@ -161,8 +168,7 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
                 {one.artist_ckb ? <small>{one.artist_ckb}</small> : null}
               </span>
             </figcaption>
-            {one.youtube_id || one.spotify_id ? (
-              <div className="kc-one-play">
+            <div className="kc-one-play">
                 {one.youtube_id ? (
                   <a className="kc-listen" href={`https://www.youtube.com/watch?v=${one.youtube_id}`} data-yt={1} target="_blank" rel="noopener">
                     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" /></svg>
@@ -170,8 +176,7 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
                   </a>
                 ) : null}
                 <SpotifyLink e={one} label />
-              </div>
-            ) : null}
+            </div>
           </figure>
 
           <ol className="kc-list kc-top" start={2}>

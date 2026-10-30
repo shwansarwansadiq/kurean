@@ -143,8 +143,9 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   **Listening (Shwan, 30 Oct, chose both):** `lib/listen.ts` finds each song's official YouTube video (artist channel,
   its "- Topic" channel or a known label channel; title must name the song; covers/lyrics/fancams refused) and its Spotify
   track; `ChartPlayer.tsx` plays the chart in YouTube's own embedded player (youtube-nocookie, loaded on tap, always
-  visible ≥200 px, auto-next down the chart); Spotify is a link out. Env: `YOUTUBE_API_KEY`, `SPOTIFY_CLIENT_ID`,
-  `SPOTIFY_CLIENT_SECRET` (migrate-007). Quota: ≤40 YouTube searches a day; videos re-checked every 30 days.
+  visible ≥200 px, auto-next down the chart); Spotify is a link out: to Spotify's search for the song (no key), or to the
+  track when `SPOTIFY_CLIENT_ID`/`SECRET` are set — Spotify's Web API needs a Premium owner since Feb 2026, so not set.
+  Env: `YOUTUBE_API_KEY` (migrate-007). Quota: ≤40 YouTube searches a day; videos re-checked every 30 days.
   Melon was refused (robots.txt blocks it); Spotify's API no longer serves its Korea playlist to new apps.
 - **Analytics (`/admin/analytics`, from Shwan's spec 30 Oct):** first-party tracker `components/Tracker.tsx` → `/api/t`
   → `analytics_events`; no cookies, no IP stored; visitor = salted daily hash, or a stable random ID after consent

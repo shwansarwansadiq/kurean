@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type QueueItem = { rank: number; yt: string; title: string; artist: string; spotify: string | null };
+export type QueueItem = { rank: number; yt: string; title: string; artist: string; spotify: string | null }; // a Spotify link (track or search)
 
 type YTPlayer = { loadVideoById(id: string): void; destroy(): void };
 type YTNamespace = { Player: new (el: HTMLElement, opts: Record<string, unknown>) => YTPlayer };
@@ -168,7 +168,7 @@ export function ChartPlayer({ queue }: { queue: QueueItem[] }) {
           پێشوو
         </button>
         {item?.spotify ? (
-          <a className="kp-sp" href={`https://open.spotify.com/track/${item.spotify}`} target="_blank" rel="noopener" tabIndex={open ? 0 : -1}>
+          <a className="kp-sp" href={item.spotify} target="_blank" rel="noopener" tabIndex={open ? 0 : -1}>
             <SpotifyIcon /> <span className="lat">Spotify</span>
           </a>
         ) : <span />}
