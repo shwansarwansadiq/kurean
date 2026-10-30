@@ -17,8 +17,8 @@ approve. **Nothing is ever published without his approval.**
 | --- | --- |
 | 1. Setup (domain, handles, accounts, logo, templates, glossary, sources) | Done |
 | 2. Engine (collector, scorer, writer, glossary) | Done and live |
-| 3. Website pages (home, categories, article, short links) | Next |
-| 4. Approval dashboard (/admin) | Next, build together with phase 3 |
+| 3. Website pages (home, categories, article, short links) | Built ("album booklet" direction) |
+| 4. Approval dashboard (/admin) | Built (password sign-in) |
 | 5. Card/story image generation + social publishing | After 4 |
 
 Build phases 3 and 4 together so the first story on the public site is one Shwan approved.
@@ -31,8 +31,10 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
 - Supabase project ref `eizsrdtmftjrbxmoawdl` (org KUREAN, region eu-west-3). Tables: `sources`, `raw_items`,
   `stories`, `glossary` — see `supabase/schema.sql`. Seeds in `supabase/seed.sql`.
 - Env vars (set in Vercel, never commit): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (a `sb_secret_` key),
-  `ANTHROPIC_API_KEY`, `CRON_SECRET`. Optional: `KUREAN_DAILY_LIMIT` (8), `KUREAN_MIN_SCORE` (7),
-  `KUREAN_SCORE_MODEL`, `KUREAN_WRITE_MODEL`.
+  `ANTHROPIC_API_KEY`, `CRON_SECRET`, `ADMIN_PASSWORD` (≥10 characters; Shwan sets it himself; changing it signs out).
+  Local preview without a database: `KUREAN_FIXTURES=1 npm run dev` (sample stories; photos from `public/_dev/`, not committed).
+  Optional: `KUREAN_DAILY_LIMIT` (8), `KUREAN_MIN_SCORE` (7), `KUREAN_SCORE_MODEL`, `KUREAN_WRITE_MODEL`.
+- Migrations: `supabase/migrate-002-site.sql` (photo, platforms, sticker columns + `story-images` storage bucket).
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -76,8 +78,10 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   At most one short attributed quote. Use only facts in the source; invent nothing.
 - Every story credits its source with a link ("سەرچاوە: …").
 - No rumours as facts. Dating, health, death, legal and scandal stories state only what is confirmed and who confirmed it.
-- Images: branded cards by default; a photo only when it is clearly official press material, with its licence logged.
-  Never reuse agency photos (Yonhap, Getty, Newsen, etc.).
+- Images (Shwan's decision, 30 Oct 2026, after being told the copyright and account-strike risk): use the photo exactly
+  as the source posted it (feed image, else the article's og:image), copied to the `story-images` bucket and always
+  credited "وێنە: <source>" on the site and cards. A branded card is the fallback when there is no photo or a fetch is
+  refused (never work around a refusal). If a takedown or claim arrives, remove the photo in /admin (Edit → remove photo).
 - Group and artist names stay in Latin letters, with the Sorani spelling in brackets the first time.
 - Glossary spellings are mandatory (table `glossary`; the plan doc's Glossary tab is the human-edited copy).
   Example: fandom → کۆمەڵەی هەواداران in articles, فاندۆم allowed in casual captions.
@@ -101,8 +105,23 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
 - `/admin` approval dashboard (login required): story cards with Publish / Edit / Regenerate / Skip / pick platforms,
   Published list, "link stickers to add" checklist, Sources, Glossary, Logs.
 - Publish is immediate on approval (Shwan's choice).
+- Stories #1 and #2 are set to skipped by `migrate-002-site.sql`.
+
+## Website and dashboard (built)
+
+- Direction "album booklet" (taste-skill colour-chapters + impeccable read mode): categories are album versions in
+  their colour, stories a numbered tracklist, sources credited like liner notes, Seoul ↔ Hawler clocks, glass masthead
+  and chips over photos, the logo's hand draws itself and the 21 rays rise on load, the field sun turns slowly
+  (all motion off with reduced motion). Category labels: کەی-پۆپ، دراما و فیلم، کولتوور، هەواڵی کۆریا.
+- Routes: `/`, `/category/<kpop|kdrama-film|culture|korea>`, `/news/<id>`, `/n/<id>` (→ article), `/latest`.
+- `/admin`: queue (publish with platforms, edit, rewrite, skip), Published (unpublish), Skipped (restore), Stickers,
+  Sources (pause/resume), Glossary (add/change). Edit page previews the feed post and story designs (`SocialCards.tsx`).
 
 ## Social publishing (phase 5)
+
+- **Every story goes to the feed as well as stories (Shwan, 30 Oct):** Instagram + Facebook feed post 1080×1350 and
+  story 1080×1920, TikTok carousel, each made from the source photo in Kurean's design with the card headline on it
+  (`SocialCards.tsx` is the layout to export). Captions from the story's caption fields.
 
 - Instagram + Facebook via Shwan's Meta developer app (Graph API). TikTok via a publishing service with an
   already-audited app (unaudited apps can only post privately).

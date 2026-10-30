@@ -5,7 +5,7 @@ import { isFresh, normalizeEntry, type FeedEntry } from "./feed";
 const parser: Parser<object, FeedEntry> = new Parser({
   timeout: 15_000,
   headers: { "User-Agent": "KureanBot/1.0 (+https://kurean.news)" },
-  customFields: { item: [["media:content", "mediaContent"]] },
+  customFields: { item: [["media:content", "mediaContent"], ["content:encoded", "contentEncoded"]] },
 });
 
 export type CollectResult = { source: string; found: number; added: number; error?: string };

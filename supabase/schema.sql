@@ -79,3 +79,15 @@ create policy "public reads published stories" on stories
 
 -- Added after launch: credit every source that reported the same news
 alter table stories add column if not exists sources jsonb not null default '[]'::jsonb;
+
+-- Phase 3/4: photos, platforms and editing
+alter table stories add column if not exists image_url text;      -- copy in our storage bucket
+alter table stories add column if not exists image_source text;   -- where the photo was posted (source page)
+alter table stories add column if not exists image_credit text;   -- shown under the photo, e.g. "Soompi"
+alter table stories add column if not exists platforms text[] not null default '{}'; -- chosen when publishing
+alter table stories add column if not exists edited_at timestamptz;
+alter table stories add column if not exists sticker_done boolean not null default false;
+
+-- Public bucket for story photos
+insert into storage.buckets (id, name, public) values ('story-images', 'story-images', true)
+on conflict (id) do nothing;

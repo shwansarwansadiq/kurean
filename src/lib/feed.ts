@@ -47,6 +47,7 @@ export type FeedEntry = {
   summary?: string;
   isoDate?: string;
   pubDate?: string;
+  contentEncoded?: string;
   enclosure?: { url?: string; type?: string };
   mediaContent?: { $?: { url?: string } } | Array<{ $?: { url?: string } }>;
 };
@@ -73,7 +74,10 @@ export function normalizeEntry(e: FeedEntry): NormalizedItem | null {
   }
   const media = Array.isArray(e.mediaContent) ? e.mediaContent[0] : e.mediaContent;
   const image =
-    (e.enclosure?.type?.startsWith("image") ? e.enclosure.url : undefined) ?? media?.$?.url ?? null;
+    (e.enclosure?.type?.startsWith("image") ? e.enclosure.url : undefined) ??
+    media?.$?.url ??
+    firstImageInHtml(e.contentEncoded ?? e.content) ??
+    null;
   const date = e.isoDate || e.pubDate;
   const parsed = date ? new Date(date) : null;
   return {
@@ -82,7 +86,7 @@ export function normalizeEntry(e: FeedEntry): NormalizedItem | null {
     title,
     summary: plainText(e.contentSnippet || e.summary || e.content),
     published_at: parsed && !isNaN(parsed.getTime()) ? parsed.toISOString() : null,
-    // Stored for reference only: the image rules allow official press material, checked before use.
+    // The photo as the source posted it; the writer copies it with the story and credits the source.
     image_url: image ?? null,
   };
 }
@@ -91,4 +95,19 @@ export function normalizeEntry(e: FeedEntry): NormalizedItem | null {
 export function isFresh(item: NormalizedItem, now = new Date(), hours = 48): boolean {
   if (!item.published_at) return true;
   return now.getTime() - new Date(item.published_at).getTime() <= hours * 3600_000;
+}
+
+/** First real image in an HTML snippet (skips tracking pixels and icons). */
+export function firstImageInHtml(html: string | undefined | null): string | null {
+  if (!html) return null;
+  for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
+    const tag = m[0];
+    const src = /\bsrc=["']([^"']+)["']/i.exec(tag)?.[1];
+    if (!src || !/^https?:\/\//i.test(src)) continue;
+    const w = Number(/\bwidth=["']?(\d+)/i.exec(tag)?.[1] ?? 0);
+    if (w && w < 200) continue;
+    if (/(pixel|spacer|feeds\.feedburner|gravatar|emoji|\.gif(\?|$))/i.test(src)) continue;
+    return src.replace(/&amp;/g, "&");
+  }
+  return null;
 }

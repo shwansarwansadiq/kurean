@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db, type GlossaryTerm, type Source } from "./db";
+import { attachPhoto, type PhotoCandidate } from "./photo";
 import { needsSecondSource, primaryReport, relatedCandidates, totalSourceChars, type Report } from "./cluster";
 import {
   CATEGORIES,
@@ -82,6 +83,7 @@ type ItemRow = {
   url: string;
   title: string;
   summary: string | null;
+  image_url?: string | null;
   sources: Pick<Source, "name" | "trust">;
 };
 
@@ -136,7 +138,7 @@ async function findSameStory(item: ItemRow & { source_id: string }): Promise<Poo
   const since = new Date(Date.now() - 48 * 3600_000).toISOString();
   const { data, error } = await db()
     .from("raw_items")
-    .select("id, url, title, summary, status, source_id, sources(name, trust)")
+    .select("id, url, title, summary, image_url, status, source_id, sources(name, trust)")
     .neq("source_id", item.source_id)
     .gte("created_at", since)
     .order("created_at", { ascending: false })
@@ -193,7 +195,7 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
   // Take extra candidates: some turn out to be duplicates or too thin and are skipped.
   const { data, error } = await db()
     .from("raw_items")
-    .select("id, url, title, summary, score_reason, source_id, sources(name, trust)")
+    .select("id, url, title, summary, image_url, score_reason, source_id, sources(name, trust)")
     .eq("status", "scored")
     .order("score", { ascending: false })
     .order("published_at", { ascending: false })
@@ -239,7 +241,7 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
         parse: (x) => StorySchema.parse(x),
       });
 
-      const { error: insertError } = await db().from("stories").insert({
+      const { data: inserted, error: insertError } = await db().from("stories").insert({
         raw_item_id: item.id,
         category,
         ...story,
@@ -247,8 +249,15 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
         source_url: primary.url,
         sources: ordered.map((r) => ({ name: r.source, url: r.url, trust: r.trust })),
         needs_second_source: needsSecondSource(sensitive, reports),
-      });
+      }).select("id").single();
       if (insertError) throw insertError;
+
+      // The photo as the source posted it, most trusted report first.
+      const rows = [item, ...same];
+      const byId = new Map(rows.map((r) => [r.id, r]));
+      await attachPhoto(inserted.id, ordered.map((r) => photoCandidate(byId.get(r.id)!))).catch((e) =>
+        console.error("photo failed", inserted.id, e),
+      );
 
       const ids = reports.map((r) => r.id);
       ids.forEach((id) => handled.add(id));
@@ -261,4 +270,77 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
     }
   }
   return { written, failed };
+}
+
+const photoCandidate = (r: ItemRow): PhotoCandidate => ({ image_url: r.image_url ?? null, url: r.url, source: r.sources.name });
+
+type StoryRow = {
+  id: number;
+  category: Category;
+  raw_item_id: string | null;
+  sources: { name: string; url: string; trust: number }[];
+};
+
+/** Rewrites a pending story from the same source reports (the dashboard's Regenerate). */
+export async function regenerate(storyId: number): Promise<void> {
+  const { data: story, error } = await db()
+    .from("stories")
+    .select("id, category, raw_item_id, sources")
+    .eq("id", storyId)
+    .single<StoryRow>();
+  if (error) throw error;
+  const urls = story.sources.map((s) => s.url);
+  const { data, error: rawError } = await db()
+    .from("raw_items")
+    .select("id, url, title, summary, image_url, score_reason, sources(name, trust)")
+    .in("url", urls);
+  if (rawError) throw rawError;
+  const rows = (data ?? []) as unknown as (ItemRow & { score_reason: string | null })[];
+  if (!rows.length) throw new Error("the source reports for this story are gone");
+  const main = rows.find((r) => r.id === story.raw_item_id) ?? rows[0];
+  const sensitive = main.score_reason ? parseScoreReason(main.score_reason).sensitive : false;
+  const reports = rows.map(toReport);
+  const primary = primaryReport(reports);
+  const ordered = [primary, ...reports.filter((r) => r !== primary)];
+
+  const written = await callTool({
+    model: WRITE_MODEL,
+    system: writeSystem(await glossary()),
+    user: writeUserMessage({ category: story.category, sensitive, reports: ordered }),
+    tool: STORY_TOOL,
+    maxTokens: 8000,
+    parse: (x) => StorySchema.parse(x),
+  });
+  const { error: updateError } = await db()
+    .from("stories")
+    .update({ ...written, edited_at: null, status: "pending" })
+    .eq("id", storyId);
+  if (updateError) throw updateError;
+
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  await attachPhoto(storyId, ordered.map((r) => photoCandidate(byId.get(r.id)!))).catch(() => false);
+}
+
+/** Finds and attaches the source photo for stories written before photos were collected. */
+export async function backfillPhotos(limit = 10): Promise<number> {
+  const { data, error } = await db()
+    .from("stories")
+    .select("id, sources")
+    .is("image_url", null)
+    .in("status", ["pending", "published"])
+    .order("id", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  let done = 0;
+  for (const s of (data ?? []) as { id: number; sources: { name: string; url: string }[] }[]) {
+    const urls = s.sources.map((x) => x.url);
+    const { data: raws } = await db().from("raw_items").select("url, image_url").in("url", urls);
+    const img = new Map((raws ?? []).map((r: { url: string; image_url: string | null }) => [r.url, r.image_url]));
+    const ok = await attachPhoto(
+      s.id,
+      s.sources.map((x) => ({ image_url: img.get(x.url) ?? null, url: x.url, source: x.name })),
+    ).catch(() => false);
+    if (ok) done++;
+  }
+  return done;
 }

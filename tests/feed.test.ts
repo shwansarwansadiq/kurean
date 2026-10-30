@@ -58,3 +58,14 @@ describe("isFresh", () => {
     expect(isFresh({ ...base, published_at: null }, now)).toBe(true);
   });
 });
+
+import { firstImageInHtml } from "../src/lib/feed";
+describe("firstImageInHtml", () => {
+  it("finds the article photo and skips pixels", () => {
+    const html = '<img src="https://x.com/pixel.gif" width="1"><p>t</p><img class="a" src="https://cdn.x.com/photo.jpg?w=800&amp;q=1" width="800">';
+    expect(firstImageInHtml(html)).toBe("https://cdn.x.com/photo.jpg?w=800&q=1");
+  });
+  it("returns null without images", () => {
+    expect(firstImageInHtml("<p>no photo</p>")).toBeNull();
+  });
+});
