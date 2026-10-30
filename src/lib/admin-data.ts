@@ -88,3 +88,22 @@ export function photoStatus(s: Pick<AdminStory, "image_url" | "image_license">):
   if (s.image_url) return { label: "وێنەی سەرچاوە: کۆپیرایتی هەیە", tone: "warn" };
   return { label: "بێ وێنە: کارتی براند", tone: "none" };
 }
+
+export type SocialPost = { story_id: number; platform: string; kind: string; ok: boolean; error: string | null; created_at: string };
+
+/** Latest attempt per story, platform and kind. */
+export async function socialPosts(storyIds: number[]): Promise<Map<number, SocialPost[]>> {
+  const out = new Map<number, SocialPost[]>();
+  if (!storyIds.length || fixturesOn()) return out;
+  const { data } = await db()
+    .from("social_posts")
+    .select("story_id, platform, kind, ok, error, created_at")
+    .in("story_id", storyIds)
+    .order("created_at", { ascending: false });
+  for (const p of (data ?? []) as SocialPost[]) {
+    const list = out.get(p.story_id) ?? [];
+    if (!list.some((x) => x.platform === p.platform && x.kind === p.kind)) list.push(p);
+    out.set(p.story_id, list);
+  }
+  return out;
+}

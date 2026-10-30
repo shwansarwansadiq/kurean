@@ -80,8 +80,7 @@ export default async function EditStory({ params, searchParams }: { params: Prom
           <input type="hidden" name="id" value={story.id} />
           <input type="hidden" name="p_instagram" value="on" />
           <input type="hidden" name="p_facebook" value="on" />
-          <input type="hidden" name="p_tiktok" value="on" />
-          <Submit className="btn pub" busy="بڵاودەکرێتەوە…">بڵاوی بکەوە (هەموو پلاتفۆرمەکان)</Submit>
+          <Submit className="btn pub" busy="بڵاودەکرێتەوە…">بڵاوی بکەوە (ماڵپەڕ، ئینستاگرام، فەیسبووک)</Submit>
         </form>
       ) : null}
     </AdminShell>

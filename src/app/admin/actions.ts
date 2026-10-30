@@ -7,6 +7,7 @@ import { ADMIN_COOKIE, adminToken, isAdminToken, passwordMatches } from "@/lib/a
 import { db } from "@/lib/db";
 import { CATEGORY_KEYS, type CategoryKey } from "@/lib/site";
 import { refreshPhoto, regenerate } from "@/lib/writer";
+import { publishSocial } from "@/lib/social";
 import { PLATFORMS } from "@/lib/admin-data";
 
 
@@ -61,7 +62,18 @@ export async function publishStory(form: FormData) {
     .in("status", ["pending", "skipped"]);
   if (error) throw error;
   refreshSite(id);
+  // The site first, then social media: the cards link back to the published article.
+  await publishSocial(id, platforms);
   revalidatePath("/admin");
+  revalidatePath("/admin/published");
+}
+
+export async function retrySocial(form: FormData) {
+  await requireAdmin();
+  const id = idOf(form);
+  const platforms = String(form.get("platforms") ?? "").split(",").filter(Boolean);
+  await publishSocial(id, platforms);
+  revalidatePath("/admin/published");
 }
 
 export async function skipStory(form: FormData) {

@@ -19,7 +19,7 @@ approve. **Nothing is ever published without his approval.**
 | 2. Engine (collector, scorer, writer, glossary) | Done and live |
 | 3. Website pages (home, categories, article, short links) | Built ("album booklet" direction) |
 | 4. Approval dashboard (/admin) | Built (password sign-in) |
-| 5. Card/story image generation + social publishing | After 4 |
+| 5. Card/story image generation + social publishing | Instagram + Facebook built (Meta app KUREAN); TikTok next |
 
 Build phases 3 and 4 together so the first story on the public site is one Shwan approved.
 
@@ -34,7 +34,8 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
   `ANTHROPIC_API_KEY`, `CRON_SECRET`, `ADMIN_PASSWORD` (≥10 characters; Shwan sets it himself; changing it signs out).
   Local preview without a database: `KUREAN_FIXTURES=1 npm run dev` (sample stories; photos from `public/_dev/`, not committed).
   Optional: `KUREAN_DAILY_LIMIT` (8), `KUREAN_MIN_SCORE` (7), `KUREAN_SCORE_MODEL`, `KUREAN_WRITE_MODEL`.
-- Migrations: `supabase/migrate-002-site.sql` (photo, platforms, sticker columns + `story-images` storage bucket).
+- Migrations: `supabase/migrate-002-site.sql` (photo, platforms, sticker columns + `story-images` storage bucket),
+  `migrate-003-photos.sql` (photo licence flags), `migrate-004-social.sql` (`social_posts`). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -133,6 +134,14 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   story 1080×1920, TikTok carousel, each made from the source photo in Kurean's design with the card headline on it
   (`SocialCards.tsx` is the layout to export). Captions from the story's caption fields.
 
+- **Built:** Publish in /admin → site first, then `social.ts` renders `/card/<id>?f=feed|story` to JPEG with headless
+  Chromium (`render-card.ts`, @sparticuz/chromium) and posts feed + story to Instagram and Facebook (`meta.ts`,
+  Graph v23). Every attempt is logged in `social_posts`; /admin/published shows ✓/✕ with a retry button.
+  Meta setup: app **KUREAN** (id 959741500120355) in the **Kurean** business portfolio (1048369881550004), system user
+  **kurean-publisher** with Page "Content" only on Page **kurean** (1332232389983250, linked to @kurean.news).
+  Its never-expiring token is `META_TOKEN` in Vercel. `meta.ts` refuses any Page other than kurean.
+  Check without posting: `/api/meta/check` (Bearer CRON_SECRET), `?render=<published id>` also renders cards.
+  Never touch Shwan's other Meta apps or portfolios (Psoola, kuko, others).
 - Instagram + Facebook via Shwan's Meta developer app (Graph API). TikTok via a publishing service with an
   already-audited app (unaudited apps can only post privately).
 - APIs cannot add link stickers to stories: put the short link in the design; the dashboard reminds Shwan to add
