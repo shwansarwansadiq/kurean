@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCron } from "@/lib/cron-auth";
 import { metaTargets } from "@/lib/meta";
-import { renderCards } from "@/lib/render-card";
+import { debugCard, renderCards } from "@/lib/render-card";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -27,5 +27,7 @@ export async function GET(req: Request) {
       out.cards = { error: e instanceof Error ? e.message : String(e) };
     }
   }
+  const dbg = Number(new URL(req.url).searchParams.get("debug"));
+  if (dbg) out.debug = await debugCard(dbg).catch((e) => String(e));
   return NextResponse.json(out);
 }
