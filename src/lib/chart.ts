@@ -181,7 +181,12 @@ For each song you get the title and artist exactly as the Korean chart writes th
 - title_ckb: only for Korean titles, a short natural Sorani rendering of what the title means. Leave it empty for
   English titles and for titles that are only a name. If you are not sure what it means, leave it empty.
 - artist_ckb: the artist name in Sorani letters by sound (e.g. IVE → ئایڤ, aespa → ئێسپا, IU → ئایو).
+- title_latin and artist_latin must contain no Korean letters at all.
 Use only the text you are given; add nothing else.`;
+
+/** Both Latin names present and free of Hangul. */
+export const isRomanized = (n: { title_latin?: string | null; artist_latin?: string | null }) =>
+  !!n.title_latin && !!n.artist_latin && !HANGUL.test(n.title_latin) && !HANGUL.test(n.artist_latin);
 
 type Names = Pick<ChartEntry, "title_latin" | "title_ckb" | "artist_latin" | "artist_ckb">;
 
@@ -233,7 +238,10 @@ export async function refreshChart(opts: { force?: boolean } = {}): Promise<{ ok
   for (let i = 0; i < fresh.length; i += 50) {
     const batch = fresh.slice(i, i + 50);
     const names = await writeNames(batch);
-    const rows = batch.map((e, j) => ({ id: e.id, title: e.title, artist: e.artist, ...names[j], updated_at: new Date().toISOString() }));
+    // A name still in Korean letters is not stored, so the song is asked again on the next run.
+    const rows = batch
+      .map((e, j) => ({ id: e.id, title: e.title, artist: e.artist, ...names[j], updated_at: new Date().toISOString() }))
+      .filter((r) => isRomanized(r));
     const { error } = await db().from("chart_songs").upsert(rows);
     if (!error) named += rows.length;
   }
