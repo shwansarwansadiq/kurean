@@ -200,6 +200,8 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   (`tiktok_done`); Shwan posts from his phone and adds a trending sound in TikTok (never K-pop audio in the file).
   Edit page previews the video. Not yet: posting Reels automatically, TikTok Content Posting API. Remotion's licence is
   free for individuals and companies of up to 3 people. Local: `cd video && npx remotion studio src/index.ts`.
+  `Promo` (29 s) is the site advert: mark, promise, four categories, credited sources, clocks, top 100 + player,
+  socials, end card. Render: `npx remotion render src/index.ts Promo out/kurean-promo.mp4`.
 
 ## Design skills in this repo
 
