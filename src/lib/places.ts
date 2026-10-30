@@ -4,6 +4,9 @@
  */
 export type Place = { en: string; ckb: string; query: string; must: string[] };
 
+/** A wider theme counts only when the description names Korea or one of its cities. */
+const KOREA = ["korea", "seoul", "busan", "jeju", "incheon", "gyeongju", "daegu", "gangneung"];
+
 export const PLACES: Place[] = [
   { en: "Gyeongbokgung Palace, Seoul", ckb: "کۆشکی گیۆنگبۆکگونگ، سیئۆڵ", query: "Gyeongbokgung palace", must: ["gyeongbokgung"] },
   { en: "Changdeokgung Palace, Seoul", ckb: "کۆشکی چانگدۆکگونگ، سیئۆڵ", query: "Changdeokgung", must: ["changdeokgung"] },
@@ -25,6 +28,17 @@ export const PLACES: Place[] = [
   { en: "Cherry blossoms in Korea", ckb: "شکۆفەی گێلاس لە کۆریا", query: "cherry blossom Korea", must: ["korea", "seoul", "busan", "jinhae", "gyeongju"] },
   { en: "Boseong green tea fields", ckb: "کێڵگەکانی چای سەوزی بۆسۆنگ", query: "Boseong green tea", must: ["boseong"] },
   { en: "Korean temple", ckb: "پەرستگایەکی کۆری", query: "Korean temple", must: ["korea"] },
+  // Wider themes (Shwan, 31 Oct): still only Korea — the description must name Korea or a Korean city.
+  { en: "Mountains of Korea", ckb: "چیاکانی کۆریا", query: "Korea mountain", must: KOREA },
+  { en: "Autumn in Korea", ckb: "پاییز لە کۆریا", query: "Korea autumn", must: KOREA },
+  { en: "Winter in Korea", ckb: "زستان لە کۆریا", query: "Korea snow winter", must: KOREA },
+  { en: "Streets of Seoul", ckb: "شەقامەکانی سیئۆڵ", query: "Seoul street", must: ["seoul"] },
+  { en: "Seoul from above", ckb: "سیئۆڵ لە سەرەوە", query: "Seoul aerial city", must: ["seoul"] },
+  { en: "Korean coast", ckb: "کەناراوەکانی کۆریا", query: "Korea sea coast", must: KOREA },
+  { en: "Korean palace", ckb: "کۆشکێکی کۆری", query: "Korea palace", must: KOREA },
+  { en: "Hanok houses", ckb: "خانووی هانۆک", query: "hanok", must: ["hanok"] },
+  { en: "Korean market", ckb: "بازاڕێکی کۆری", query: "Korea market", must: KOREA },
+  { en: "Korea at night", ckb: "کۆریا بە شەو", query: "Korea night", must: KOREA },
 ];
 
 export const MUSIC = ["han-river", "jeju-breeze", "seoul-night", "blossom"] as const;

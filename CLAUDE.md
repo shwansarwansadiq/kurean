@@ -188,7 +188,7 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   the Instagram sticker by hand (~5 seconds).
 - Formats: feed 1080×1350, story 1080×1920 (safe zones top ~220px, bottom ~250px), TikTok carousel 1080×1920 × 3.
 - **Scenery stories (built 31 Oct; Shwan chose royalty-free music):** between the news on Instagram and Facebook
-  stories, one Korea landscape/landmark clip. `lib/places.ts` (20 named places, Sorani names written by hand; a Pexels
+  stories, one Korea landscape/landmark clip. `lib/places.ts` (20 named places + 10 wider Korea themes, Sorani names written by hand; a Pexels
   item is used only if its description/address names the place), `lib/scenery.ts`: weekly job `kurean-scenery`
   (Mon 06:17 UTC) → `/api/cron/scenery` → `refreshScenery()` adds ~24 vertical ≥1080×1920 candidates (photo + clip
   per place) as `pending`; /admin/scenery (دیمەن): approve/reject, "search now". Approved items are rendered by the
