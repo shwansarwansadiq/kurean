@@ -38,7 +38,7 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
   `migrate-003-photos.sql` (photo licence flags), `migrate-004-social.sql` (`social_posts`),
   `migrate-005-photos-analytics.sql` (photo options, gallery, `analytics_events`, `kurean_analytics()`),
   `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids),
-  `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`). Env also: `META_TOKEN`.
+  `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`), `migrate-009-video.sql` (video, tiktok_done). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -190,6 +190,16 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   - Overlay: place name in Sorani with 📍, small Kurean logo, credit "📷 <photographer> · Pexels".
   - Table `scenery` (to add): id, pexels_id, kind (photo|video), url, width, height, duration, place_en,
     place_ckb, photographer, photographer_url, status (pending|approved|rejected), last_posted_at.
+
+- **Motion videos (Shwan, 30 Oct):** every recent pending/published story gets a 9:16 MP4 (`video/`, Remotion 4):
+  `News` (11 s: photo zoom, headline word by word, 3 key points, logo end card) and `Chart` (18 s: 10 → 1 countdown,
+  #1 on berry). GitHub Actions `render-videos.yml` (every 15 min, free on this public repo) asks `/api/video/jobs`,
+  renders, uploads to `story-images/video/`, reports to `/api/video/done`. Auth = GitHub OIDC token checked in
+  `lib/video.ts` (repo + main + workflow), no shared secret. A video is remade when what it shows changes
+  (`video_hash`; bump `DESIGN_VERSION` after design changes). /admin/tiktok: download, copy caption, mark posted
+  (`tiktok_done`); Shwan posts from his phone and adds a trending sound in TikTok (never K-pop audio in the file).
+  Edit page previews the video. Not yet: posting Reels automatically, TikTok Content Posting API. Remotion's licence is
+  free for individuals and companies of up to 3 people. Local: `cd video && npx remotion studio src/index.ts`.
 
 ## Design skills in this repo
 

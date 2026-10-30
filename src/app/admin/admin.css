@@ -202,3 +202,17 @@
 .empty-note { color: var(--ink-2); font-size: 13px; margin: 6px 0; }
 .facts { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; font-size: 13px; }
 .facts li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+
+/* TikTok tab */
+.tt-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.tt { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 12px; }
+.tt.done { opacity: 0.6; }
+.tt-video { width: 150px; aspect-ratio: 9 / 16; border-radius: 12px; background: var(--plum); object-fit: cover; }
+.tt-wait { display: grid; place-items: center; color: #fff; font-size: 12.5px; text-align: center; padding: 10px; }
+.tt-side { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.tt-side b { font-size: 15px; line-height: 1.7; }
+.tt-side small { color: var(--ink-2); font-size: 12px; }
+.tt-cap { margin: 4px 0; white-space: pre-wrap; font: 13px/1.8 var(--sorani); background: var(--blush); border-radius: 10px; padding: 10px 12px; max-height: 9.5em; overflow: auto; }
+.tt-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 520px) { .tt { grid-template-columns: 1fr; } .tt-video { width: 100%; max-width: 280px; justify-self: center; } }
+.vid-prev { width: 300px; }

@@ -1,0 +1,26 @@
+{
+  "name": "kurean-video",
+  "private": true,
+  "type": "module",
+  "description": "Kurean's motion videos (TikTok, Reels), rendered with Remotion in GitHub Actions.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render-jobs": "node render.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/baloo-2": "5.3.0",
+    "@fontsource/inter": "5.3.0",
+    "@fontsource/noto-kufi-arabic": "5.3.0",
+    "@remotion/bundler": "4.0.534",
+    "@remotion/cli": "4.0.534",
+    "@remotion/renderer": "4.0.534",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.534"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.8",
+    "typescript": "5.8.3"
+  }
+}

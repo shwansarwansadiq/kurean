@@ -258,3 +258,11 @@ export async function findMorePhotos(form: FormData) {
   await collectPhotoOptions(id);
   revalidatePath(`/admin/story/${id}`);
 }
+
+/** TikTok tab: Shwan posted (or un-posted) this video on TikTok from his phone. */
+export async function markTikTok(form: FormData) {
+  await requireAdmin();
+  const done = form.get("done") === "1";
+  await db().from("stories").update({ tiktok_done: done }).eq("id", idOf(form));
+  revalidatePath("/admin/tiktok");
+}

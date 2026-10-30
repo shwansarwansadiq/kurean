@@ -1,4 +1,4 @@
-const HAND = [
+export const HAND = [
   "M142 76 C128 56 138 36 162 34 C182 33 200 44 222 62 L340 158 C385 198 418 240 440 285 C470 340 468 392 445 420",
   "M142 76 L238 172",
   "M240 60 C244 30 262 10 288 10 C315 10 328 30 326 60 L322 136",
@@ -9,7 +9,7 @@ const HAND = [
   "M74 465 C78 490 82 510 88 528",
   "M445 420 C405 455 350 500 332 552",
 ];
-const RAYS = Array.from({ length: 21 }, (_, i) => i);
+export const RAYS = Array.from({ length: 21 }, (_, i) => i);
 
 /** The approved finger-heart mark with the 21-ray sun. `animated` draws it in once. */
 export function Mark({ size = 34, animated = false, ink = "var(--plum)" }: { size?: number; animated?: boolean; ink?: string }) {

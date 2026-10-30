@@ -263,3 +263,8 @@ alter table stories add column if not exists kind text not null default 'news'; 
 alter table stories add column if not exists chart_week text;                   -- chart_weeks.id for kind 'chart'
 alter table stories add column if not exists chart_top jsonb;                   -- the top 10 as written: [{rank,title,artist,artist_ckb,move,change}]
 create unique index if not exists stories_chart_week_idx on stories (chart_week) where chart_week is not null;
+-- Run once in the Supabase SQL editor. Motion videos for TikTok and Reels. Safe to run again.
+alter table stories add column if not exists video_url text;          -- MP4 in the story-images bucket (video/…)
+alter table stories add column if not exists video_hash text;         -- which version of the story the video shows
+alter table stories add column if not exists video_made_at timestamptz;
+alter table stories add column if not exists tiktok_done boolean not null default false; -- Shwan posted it on TikTok

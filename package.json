@@ -14,6 +14,7 @@
     "@anthropic-ai/sdk": "^0.65.0",
     "@sparticuz/chromium": "^153.0.0",
     "@supabase/supabase-js": "^2.57.4",
+    "jose": "6.2.12",
     "next": "^15.5.28",
     "puppeteer-core": "^25.16.0",
     "react": "19.1.0",

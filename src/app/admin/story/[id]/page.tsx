@@ -26,6 +26,14 @@ export default async function EditStory({ params, searchParams }: { params: Prom
           <SocialCard story={story} format="story" />
           <figcaption>ستۆری · 1080×1920</figcaption>
         </figure>
+        <figure>
+          {story.video_url ? (
+            <video className="tt-video vid-prev" src={story.video_url} controls playsInline preload="metadata" />
+          ) : (
+            <div className="tt-video tt-wait vid-prev">ڤیدیۆکە ئامادە دەکرێت (نزیکەی ١٥ خولەک)</div>
+          )}
+          <figcaption>ڤیدیۆ · تیکتۆک و ڕیڵز</figcaption>
+        </figure>
       </section>
       <PhotoPanel story={story} />
       <form action={saveStory} className="edit">
