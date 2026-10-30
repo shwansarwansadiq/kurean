@@ -10,6 +10,7 @@ const TABS = [
   { href: "/admin/published", key: "published", label: "بڵاوکراوە" },
   { href: "/admin/analytics", key: "analytics", label: "شیکاری" },
   { href: "/admin/tiktok", key: "tiktok", label: "تیکتۆک" },
+  { href: "/admin/scenery", key: "scenery", label: "دیمەن" },
   { href: "/admin/stickers", key: "stickers", label: "ستیکەر" },
   { href: "/admin/sources", key: "sources", label: "سەرچاوەکان" },
   { href: "/admin/glossary", key: "glossary", label: "فەرهەنگ" },

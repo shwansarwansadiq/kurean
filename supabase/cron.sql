@@ -65,3 +65,17 @@ select cron.schedule(
   );
   $$
 );
+
+-- Scenery: new Korea landscape/landmark candidates from Pexels every Monday 06:17 UTC (09:17 Hawler). Added 30 Oct 2026.
+select cron.unschedule(jobname) from cron.job where jobname = 'kurean-scenery';
+select cron.schedule(
+  'kurean-scenery',
+  '17 6 * * 1',
+  $$
+  select net.http_get(
+    url := 'https://YOUR_SITE/api/cron/scenery',
+    headers := jsonb_build_object('Authorization', 'Bearer YOUR_SECRET'),
+    timeout_milliseconds := 120000
+  );
+  $$
+);

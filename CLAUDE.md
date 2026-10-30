@@ -40,7 +40,7 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
   `migrate-005-photos-analytics.sql` (photo options, gallery, `analytics_events`, `kurean_analytics()`),
   `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids),
   `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`), `migrate-009-video.sql` (video, tiktok_done),
-  `migrate-010-schedule.sql` (`scheduled_at`). Env also: `META_TOKEN`.
+  `migrate-010-schedule.sql` (`scheduled_at`), `migrate-011-scenery.sql` (`scenery`, `social_queue`). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -186,16 +186,18 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
 - APIs cannot add link stickers to stories: put the short link in the design; the dashboard reminds Shwan to add
   the Instagram sticker by hand (~5 seconds).
 - Formats: feed 1080×1350, story 1080×1920 (safe zones top ~220px, bottom ~250px), TikTok carousel 1080×1920 × 3.
-- **Scenery stories (Shwan's request):** between every news story on Instagram and Facebook stories, post one
-  very high quality photo or ≤10 s video of Korea's nature or landmarks (alternate news → scenery → news).
-  - Source: Pexels API (needs a free `PEXELS_API_KEY`). Weekly search by named places (Gyeongbokgung, Jeju,
-    Seoraksan, Gamcheon, Bukchon, cherry blossom season…). Keep only vertical ≥1080×1920 photos and ≤10 s clips.
-  - Pexels rules: add creative effort (our overlay), no visible brand logos/trademarks, no bulk copying, never
-    use the content for datasets or model training.
-  - Shwan approves the library weekly in the dashboard (~20 items). No item repeats within 60 days.
-  - Overlay: place name in Sorani with 📍, small Kurean logo, credit "📷 <photographer> · Pexels".
-  - Table `scenery` (to add): id, pexels_id, kind (photo|video), url, width, height, duration, place_en,
-    place_ckb, photographer, photographer_url, status (pending|approved|rejected), last_posted_at.
+- **Scenery stories (built 31 Oct; Shwan chose royalty-free music):** between the news on Instagram and Facebook
+  stories, one Korea landscape/landmark clip. `lib/places.ts` (20 named places, Sorani names written by hand; a Pexels
+  item is used only if its description/address names the place), `lib/scenery.ts`: weekly job `kurean-scenery`
+  (Mon 06:17 UTC) → `/api/cron/scenery` → `refreshScenery()` adds ~24 vertical ≥1080×1920 candidates (photo + clip
+  per place) as `pending`; /admin/scenery (دیمەن): approve/reject, "search now". Approved items are rendered by the
+  video workflow (`Scenery` composition, 8.5 s: drift or clip, 📍 place card in Sorani + English, "Photo: <name> ·
+  Pexels", mark, music) into `scenery.video_url`. After any story is published to IG/FB, `queueSceneryAfter()` puts one
+  ready clip in `social_queue` 20 min later (one waiting at a time; ≥60 days between repeats); the 5-min publish job
+  posts it as IG + FB video stories (`instagramVideoStory`, `facebookVideoStory` in `meta.ts`). Music: four original
+  loops composed in code for Kurean (`video/music-compose.py` → `video/public/music/*.m4a`: han-river, jeju-breeze,
+  seoul-night, blossom), so they are Kurean's own and royalty-free. Env: `PEXELS_API_KEY` (migrate-011).
+  Pexels rules: credit the photographer, our design on top, no bulk copying, never for model training.
 
 - **Motion videos (Shwan, 30 Oct):** every recent pending/published story gets a 9:16 MP4 (`video/`, Remotion 4):
   `News` (11 s: photo zoom, headline word by word, 3 key points, logo end card) and `Chart` (18 s: 10 → 1 countdown,

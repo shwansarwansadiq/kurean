@@ -311,3 +311,19 @@ export async function markTikTok(form: FormData) {
   await db().from("stories").update({ tiktok_done: done }).eq("id", idOf(form));
   revalidatePath("/admin/tiktok");
 }
+
+/** Scenery library: approve or reject a Pexels candidate (approved ones get a clip with music, then post). */
+export async function setScenery(form: FormData) {
+  await requireAdmin();
+  const status = form.get("status") === "approved" ? "approved" : "rejected";
+  await db().from("scenery").update({ status }).eq("id", idOf(form));
+  revalidatePath("/admin/scenery");
+}
+
+/** Look for new scenery now instead of waiting for the weekly search. */
+export async function searchScenery() {
+  await requireAdmin();
+  const { refreshScenery } = await import("@/lib/scenery");
+  await refreshScenery(12);
+  revalidatePath("/admin/scenery");
+}

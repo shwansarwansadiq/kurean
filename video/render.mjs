@@ -27,12 +27,12 @@ for (const job of jobs) {
   const started = Date.now();
   try {
     const composition = await selectComposition({ serveUrl, id: job.composition, inputProps: job.props });
-    const out = path.resolve(`out/story-${job.id}.mp4`);
+    const out = path.resolve(`out/${job.target ?? "story"}-${job.id}.mp4`);
     await renderMedia({ composition, serveUrl, codec: "h264", outputLocation: out, inputProps: job.props, crf: 20, x264Preset: "medium" });
     const put = await fetch(job.upload.signedUrl, { method: "PUT", headers: { "Content-Type": "video/mp4", "x-upsert": "true" }, body: await readFile(out) });
     if (!put.ok) throw new Error(`upload: HTTP ${put.status} ${await put.text()}`);
-    const done = await fetch(`${SITE}/api/video/done`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify({ id: job.id, hash: job.hash, path: job.upload.path }) });
-    console.log(`story ${job.id}: ${done.ok ? "done" : `not recorded (HTTP ${done.status})`} in ${Math.round((Date.now() - started) / 1000)} s`);
+    const done = await fetch(`${SITE}/api/video/done`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify({ id: job.id, hash: job.hash, path: job.upload.path, target: job.target ?? "story" }) });
+    console.log(`${job.target ?? "story"} ${job.id}: ${done.ok ? "done" : `not recorded (HTTP ${done.status})`} in ${Math.round((Date.now() - started) / 1000)} s`);
   } catch (e) {
     console.error(`story ${job.id} failed:`, e);
   }

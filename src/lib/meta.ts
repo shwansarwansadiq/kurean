@@ -51,15 +51,15 @@ export async function facebookStory(t: MetaTargets, imageUrl: string): Promise<s
   return r.post_id ?? r.id ?? photo.id;
 }
 
-async function igPublish(t: MetaTargets, params: Record<string, string>): Promise<string> {
+async function igPublish(t: MetaTargets, params: Record<string, string>, tries = 20): Promise<string> {
   if (!t.igId) throw new MetaError("No Instagram account is linked to the kurean Page");
   const c = await graph<{ id: string }>(`${t.igId}/media`, { ...params, access_token: t.pageToken }, "POST");
   // Instagram fetches and processes the image; wait until the container is ready.
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < tries; i++) {
     const s = await graph<{ status_code?: string }>(c.id, { fields: "status_code", access_token: t.pageToken });
     if (s.status_code === "FINISHED") break;
-    if (s.status_code === "ERROR" || s.status_code === "EXPIRED") throw new MetaError(`Instagram could not process the image (${s.status_code})`);
-    await new Promise((r) => setTimeout(r, 1500));
+    if (s.status_code === "ERROR" || s.status_code === "EXPIRED") throw new MetaError(`Instagram could not process the file (${s.status_code})`);
+    await new Promise((r) => setTimeout(r, 3000));
   }
   const p = await graph<{ id: string }>(`${t.igId}/media_publish`, { creation_id: c.id, access_token: t.pageToken }, "POST");
   return p.id;
@@ -67,3 +67,23 @@ async function igPublish(t: MetaTargets, params: Record<string, string>): Promis
 
 export const instagramFeed = (t: MetaTargets, imageUrl: string, caption: string) => igPublish(t, { image_url: imageUrl, caption });
 export const instagramStory = (t: MetaTargets, imageUrl: string) => igPublish(t, { image_url: imageUrl, media_type: "STORIES" });
+
+/** A 9:16 MP4 (≤60 s, H.264 + AAC) as an Instagram story. Video takes longer to process, so it waits up to ~2 minutes. */
+export const instagramVideoStory = (t: MetaTargets, videoUrl: string) => igPublish(t, { video_url: videoUrl, media_type: "STORIES" }, 40);
+
+/** A 9:16 MP4 as a Facebook Page story: start an upload, let Facebook fetch the file, then finish. */
+export async function facebookVideoStory(t: MetaTargets, videoUrl: string): Promise<string> {
+  const start = await graph<{ video_id: string; upload_url: string }>(`${t.pageId}/video_stories`, { upload_phase: "start", access_token: t.pageToken }, "POST");
+  const up = await fetch(start.upload_url, {
+    method: "POST",
+    headers: { Authorization: `OAuth ${t.pageToken}`, file_url: videoUrl },
+    signal: AbortSignal.timeout(120_000),
+  });
+  if (!up.ok) throw new MetaError(`Facebook could not fetch the video (${up.status})`);
+  const done = await graph<{ success?: boolean; post_id?: string }>(
+    `${t.pageId}/video_stories`,
+    { upload_phase: "finish", video_id: start.video_id, access_token: t.pageToken },
+    "POST",
+  );
+  return done.post_id ?? start.video_id;
+}

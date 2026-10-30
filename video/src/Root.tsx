@@ -2,6 +2,7 @@ import { Composition } from "remotion";
 import { Chart, CHART_FRAMES, type ChartProps } from "./Chart";
 import { News, NEWS_FRAMES, type NewsProps } from "./News";
 import { Promo, PROMO_FRAMES } from "./Promo";
+import { Scenery, SCENERY_FRAMES, type SceneryProps } from "./Scenery";
 
 const sampleNews: NewsProps = {
   headline: "تیزەری درامای «Nine to Six» بڵاوکرایەوە و Park Bo Gum ڕۆڵی سەرەکی دەگێڕێت",
@@ -27,10 +28,20 @@ const sampleChart: ChartProps = {
   ],
 };
 
+const sampleScenery: SceneryProps = {
+  kind: "photo",
+  src: "test.jpg",
+  placeCkb: "کۆشکی گیۆنگبۆکگونگ، سیئۆڵ",
+  placeEn: "Gyeongbokgung Palace, Seoul",
+  photographer: "Sample Photographer",
+  music: "han-river",
+};
+
 export function Root() {
   return (
     <>
       <Composition id="News" component={News} durationInFrames={NEWS_FRAMES} fps={30} width={1080} height={1920} defaultProps={sampleNews} />
+      <Composition id="Scenery" component={Scenery} durationInFrames={SCENERY_FRAMES} fps={30} width={1080} height={1920} defaultProps={sampleScenery} />
       <Composition id="Promo" component={Promo} durationInFrames={PROMO_FRAMES} fps={30} width={1080} height={1920} />
       <Composition id="Chart" component={Chart} durationInFrames={CHART_FRAMES} fps={30} width={1080} height={1920} defaultProps={sampleChart} />
     </>

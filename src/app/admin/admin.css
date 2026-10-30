@@ -234,3 +234,14 @@
 .sched-cat { justify-self: start; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; }
 .sched-acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 560px) { .sched-row { grid-template-columns: auto minmax(0, 1fr); } .sched-acts { grid-column: 1 / -1; } .when { grid-template-columns: 1fr; } }
+
+/* Scenery library */
+.sc-h { font-size: 16px; font-weight: 800; margin: 18px 0 8px; }
+.sc-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.sc-item { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 8px; display: grid; gap: 6px; align-content: start; }
+.sc-prev { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 10px; background: var(--plum); }
+.sc-item b { font-size: 13.5px; line-height: 1.6; }
+.sc-item small { font-size: 11.5px; color: var(--ink-2); }
+.sc-item small a { text-decoration: underline; }
+.sc-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sc-acts .btn.pub { min-height: 38px; font-size: 13px; }
