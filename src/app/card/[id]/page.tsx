@@ -12,7 +12,8 @@ export default async function Card({ params, searchParams }: { params: Promise<{
   const format = (await searchParams).f === "story" ? "story" : "feed";
   return (
     <main className="card-page">
-      <style>{`html,body{margin:0;background:#2a1e3b}.skip{display:none}.card-page{width:1080px}
+      {/* The page stays left-to-right and only the card is right-to-left: headless Chromium paints an RTL page blank. */}
+      <style>{`html{direction:ltr}html,body{margin:0;background:#2a1e3b}.skip{display:none}.card-page{width:1080px;direction:rtl}
         .sc .glass{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
         .sc .sc-panel{background:rgb(42 30 59 / 0.72)!important}
         .sc *{animation:none!important}`}</style>
