@@ -30,6 +30,8 @@ export type AdminStory = {
   image_credit: string | null;
   image_source: string | null;
   image_license: string | null;
+  photo_options: { url: string; page: string; credit: string }[];
+  gallery: { url: string; credit: string | null; page: string | null }[];
   platforms: string[];
   sticker_done: boolean;
   edited_at: string | null;
@@ -83,6 +85,7 @@ export function photoStatus(s: Pick<AdminStory, "image_url" | "image_license">):
   const l = s.image_license ?? "";
   if (l.startsWith("free:")) return { label: `وێنەی ئازاد · ${l.slice(5)}`, tone: "ok" };
   if (l === "source-agency") return { label: "وێنەی ئاژانس: مەترسی کۆپیرایتی زۆرە", tone: "risk" };
+  if (l === "own") return { label: "وێنەی خۆت", tone: "ok" };
   if (l === "too-small") return { label: "وێنەی سەرچاوە زۆر بچووک بوو: کارتی براند", tone: "none" };
   if (l === "removed") return { label: "وێنە لابرا: کارتی براند", tone: "none" };
   if (s.image_url) return { label: "وێنەی سەرچاوە: کۆپیرایتی هەیە", tone: "warn" };

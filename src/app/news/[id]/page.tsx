@@ -39,7 +39,7 @@ export default async function StoryPage({ params }: Params) {
   return (
     <>
       <Masthead note={`${meta.label} · ${ku(readingMinutes(story.body))} خولەک خوێندنەوە`} />
-      <main id="main" className={`article cat-${story.category}`} style={{ ["--cat" as string]: meta.colour }}>
+      <main id="main" className={`article cat-${story.category}`} style={{ ["--cat" as string]: meta.colour }} data-story={story.id} data-category={story.category}>
         <div className="art-photo">
           <Photo story={story} priority />
           <CategoryChip story={story} glass />
@@ -59,6 +59,21 @@ export default async function StoryPage({ params }: Params) {
             </p>
           ))}
         </div>
+        {story.gallery?.length ? (
+          <section className="gallery" aria-label="وێنەکان">
+            {story.gallery.map((g) => (
+              <figure key={g.url}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- stored photos at their own size */}
+                <img src={g.url} alt="" loading="lazy" decoding="async" />
+                {g.credit ? (
+                  <figcaption>
+                    وێنە: <bdi className="lat">{g.credit}</bdi>
+                  </figcaption>
+                ) : null}
+              </figure>
+            ))}
+          </section>
+        ) : null}
         {story.key_points.length ? (
           <aside className="points" aria-labelledby="brief">
             <h2 id="brief">بە کورتی</h2>

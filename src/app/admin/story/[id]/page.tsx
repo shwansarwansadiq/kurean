@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { PhotoPanel } from "@/components/admin/PhotoPanel";
 import { SocialCard } from "@/components/admin/SocialCards";
 import { Submit } from "@/components/admin/Submit";
 import { adminStory } from "@/lib/admin-data";
@@ -26,6 +27,7 @@ export default async function EditStory({ params, searchParams }: { params: Prom
           <figcaption>ستۆری · 1080×1920</figcaption>
         </figure>
       </section>
+      <PhotoPanel story={story} />
       <form action={saveStory} className="edit">
         <input type="hidden" name="id" value={story.id} />
         <label>

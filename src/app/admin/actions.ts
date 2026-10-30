@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, adminToken, isAdminToken, passwordMatches } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { CATEGORY_KEYS, type CategoryKey } from "@/lib/site";
-import { refreshPhoto, regenerate } from "@/lib/writer";
+import { collectPhotoOptions, refreshPhoto, regenerate } from "@/lib/writer";
+import { download, looksLikeAgencyPhoto, store } from "@/lib/photo";
 import { publishSocial } from "@/lib/social";
 import { PLATFORMS } from "@/lib/admin-data";
 
@@ -160,5 +161,100 @@ export async function findPhoto(form: FormData) {
   await refreshPhoto(id);
   refreshSite(id);
   revalidatePath("/admin");
+  revalidatePath(`/admin/story/${id}`);
+}
+
+type GalleryItem = { url: string; credit: string | null; page: string | null };
+
+function refreshStoryPages(id: number) {
+  refreshSite(id);
+  revalidatePath("/admin");
+  revalidatePath(`/admin/story/${id}`);
+}
+
+/** Pick one of the source articles' photos as the main photo. It is copied into our storage first. */
+export async function setOptionAsMain(form: FormData) {
+  await requireAdmin();
+  const id = idOf(form);
+  const url = String(form.get("url"));
+  const d = await download(url);
+  if (!d) throw new Error("The photo could not be downloaded from the source site.");
+  const stored = await store(d, `story-${id}-pick`);
+  if (!stored) throw new Error("The photo could not be saved.");
+  await db()
+    .from("stories")
+    .update({
+      image_url: stored,
+      image_source: String(form.get("page") || "") || null,
+      image_credit: String(form.get("credit") || "") || null,
+      image_license: looksLikeAgencyPhoto(url, d.bytes) ? "source-agency" : "source",
+      photo_checked_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  refreshStoryPages(id);
+}
+
+/** A photo Shwan uploaded himself (the browser already put it in storage through a signed upload URL). */
+export async function applyOwnPhoto(form: FormData) {
+  await requireAdmin();
+  const id = idOf(form);
+  const path = String(form.get("path"));
+  if (!path.startsWith(`own/story-${id}-`)) throw new Error("bad upload path");
+  const url = db().storage.from("story-images").getPublicUrl(path).data.publicUrl;
+  const target = String(form.get("target") ?? "main");
+  if (target === "gallery") {
+    await addToGallery(id, { url, credit: null, page: null });
+  } else {
+    await db()
+      .from("stories")
+      .update({ image_url: url, image_source: null, image_credit: null, image_license: "own", photo_checked_at: new Date().toISOString() })
+      .eq("id", id);
+  }
+  refreshStoryPages(id);
+}
+
+/** Signed URL the browser uploads Shwan's photo to directly (Vercel limits request bodies to 4.5 MB). */
+export async function photoUploadUrl(id: number, ext: string): Promise<{ path: string; url: string }> {
+  await requireAdmin();
+  if (!Number.isSafeInteger(id) || id <= 0) throw new Error("bad story id");
+  const safe = ["jpg", "png", "webp"].includes(ext) ? ext : "jpg";
+  const path = `own/story-${id}-${Date.now().toString(36)}.${safe}`;
+  const { data, error } = await db().storage.from("story-images").createSignedUploadUrl(path);
+  if (error || !data) throw error ?? new Error("could not create upload URL");
+  return { path, url: data.signedUrl };
+}
+
+async function addToGallery(id: number, item: GalleryItem) {
+  const { data } = await db().from("stories").select("gallery").eq("id", id).single();
+  const gallery = ((data as { gallery: GalleryItem[] } | null)?.gallery ?? []).filter((g) => g.url !== item.url);
+  await db().from("stories").update({ gallery: [...gallery, item].slice(0, 12) }).eq("id", id);
+}
+
+/** Add one of the source articles' other photos to the article (copied into our storage). */
+export async function addOptionToGallery(form: FormData) {
+  await requireAdmin();
+  const id = idOf(form);
+  const d = await download(String(form.get("url")));
+  if (!d) throw new Error("The photo could not be downloaded from the source site.");
+  const stored = await store(d, `story-${id}-extra`);
+  if (!stored) throw new Error("The photo could not be saved.");
+  await addToGallery(id, { url: stored, credit: String(form.get("credit") || "") || null, page: String(form.get("page") || "") || null });
+  refreshStoryPages(id);
+}
+
+export async function removeFromGallery(form: FormData) {
+  await requireAdmin();
+  const id = idOf(form);
+  const url = String(form.get("url"));
+  const { data } = await db().from("stories").select("gallery").eq("id", id).single();
+  const gallery = ((data as { gallery: GalleryItem[] } | null)?.gallery ?? []).filter((g) => g.url !== url);
+  await db().from("stories").update({ gallery }).eq("id", id);
+  refreshStoryPages(id);
+}
+
+export async function findMorePhotos(form: FormData) {
+  await requireAdmin();
+  const id = idOf(form);
+  await collectPhotoOptions(id);
   revalidatePath(`/admin/story/${id}`);
 }

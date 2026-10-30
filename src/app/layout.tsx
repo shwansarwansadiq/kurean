@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Tracker } from "@/components/Tracker";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           بڕۆ بۆ ناوەڕۆک
         </a>
         {children}
+        <Tracker />
       </body>
     </html>
   );

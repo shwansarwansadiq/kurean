@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db, type GlossaryTerm, type Source } from "./db";
-import { attachPhoto, type PhotoCandidate } from "./photo";
+import { attachPhoto, sourcePhotoCandidates, type PhotoCandidate } from "./photo";
 import { needsSecondSource, primaryReport, relatedCandidates, totalSourceChars, type Report } from "./cluster";
 import {
   CATEGORIES,
@@ -357,4 +357,17 @@ export async function refreshPhoto(storyId: number): Promise<string | null> {
   const { data: raws } = await db().from("raw_items").select("url, image_url").in("url", s.sources.map((x) => x.url));
   const img = new Map((raws ?? []).map((r: { url: string; image_url: string | null }) => [r.url, r.image_url]));
   return attachPhoto(s.id, s.headline, s.sources.map((x) => ({ image_url: img.get(x.url) ?? null, url: x.url, source: x.name })));
+}
+
+/** /admin "find more photos": refreshes the story's photo options from its source articles without changing the main photo. */
+export async function collectPhotoOptions(storyId: number): Promise<number> {
+  const { data, error } = await db().from("stories").select("sources").eq("id", storyId).single();
+  if (error) throw error;
+  const sources = (data as { sources: { name: string; url: string }[] }).sources;
+  const { data: raws } = await db().from("raw_items").select("url, image_url").in("url", sources.map((x) => x.url));
+  const img = new Map((raws ?? []).map((r: { url: string; image_url: string | null }) => [r.url, r.image_url]));
+  const found = await sourcePhotoCandidates(sources.map((x) => ({ image_url: img.get(x.url) ?? null, url: x.url, source: x.name })));
+  const options = [...found.main, ...found.extra].map((c) => ({ url: c.image, page: c.page, credit: c.credit }));
+  await db().from("stories").update({ photo_options: options }).eq("id", storyId);
+  return options.length;
 }

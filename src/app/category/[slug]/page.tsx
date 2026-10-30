@@ -21,7 +21,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   return (
     <>
       <Masthead issue={issue} active={key} />
-      <main id="main">
+      <main id="main" data-category={key}>
         <section className="cat-head field" style={{ background: meta.colour }}>
           <Sun className="field-sun" />
           <h1>{meta.label}</h1>

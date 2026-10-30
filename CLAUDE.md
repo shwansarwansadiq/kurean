@@ -35,7 +35,8 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
   Local preview without a database: `KUREAN_FIXTURES=1 npm run dev` (sample stories; photos from `public/_dev/`, not committed).
   Optional: `KUREAN_DAILY_LIMIT` (8), `KUREAN_MIN_SCORE` (7), `KUREAN_SCORE_MODEL`, `KUREAN_WRITE_MODEL`.
 - Migrations: `supabase/migrate-002-site.sql` (photo, platforms, sticker columns + `story-images` storage bucket),
-  `migrate-003-photos.sql` (photo licence flags), `migrate-004-social.sql` (`social_posts`). Env also: `META_TOKEN`.
+  `migrate-003-photos.sql` (photo licence flags), `migrate-004-social.sql` (`social_posts`),
+  `migrate-005-photos-analytics.sql` (photo options, gallery, `analytics_events`, `kurean_analytics()`). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -128,6 +129,18 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
 - Routes: `/`, `/category/<kpop|kdrama-film|culture|korea>`, `/news/<id>`, `/n/<id>` (→ article), `/latest`.
 - `/admin`: queue (publish with platforms, edit, rewrite, skip), Published (unpublish), Skipped (restore), Stickers,
   Sources (pause/resume), Glossary (add/change). Edit page previews the feed post and story designs (`SocialCards.tsx`).
+- Favicon: `src/app/icon.svg` (finger heart + 21 rays on a blush tile).
+- **Photos (Edit page → وێنەکان, `PhotoPanel.tsx`):** upload your own photo as the main photo or as an extra (browser
+  shrinks to ≤2400 px, uploads straight to storage via a signed URL); "use as main" or "add to article" for any other
+  photo found in the source articles (`stories.photo_options`, filled when the story is written or via "search the
+  sources again"); extra photos live in `stories.gallery` and show inside the article. Nothing is used without Shwan.
+- **Analytics (`/admin/analytics`, from Shwan's spec 30 Oct):** first-party tracker `components/Tracker.tsx` → `/api/t`
+  → `analytics_events`; no cookies, no IP stored; visitor = salted daily hash, or a stable random ID after consent
+  (banner in ckb + en). Bots, /admin, /card and the signed-in editor are excluded. All numbers come from the SQL
+  function `kurean_analytics(from, to, category)` (migrate-005); tabs: all + each category; ranges today/7/30/90/custom
+  with previous-period deltas; Latin/Kurdish digits; CSV export. Public definitions at `/measure`.
+  Not built yet from the spec: daily rollup tables (only needed at scale), ad slots/viewability, pricing calculator,
+  media-kit PDF, campaign report, English toggle, monthly email.
 
 ## Social publishing (phase 5)
 

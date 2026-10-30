@@ -30,12 +30,13 @@ export type Story = {
   image_url: string | null;
   image_credit: string | null;
   image_source: string | null;
+  gallery?: { url: string; credit: string | null; page: string | null }[];
   published_at: string | null;
   created_at: string;
 };
 
 const LIST_FIELDS =
-  "id, category, headline, card_headline, body, key_points, source_name, source_url, sources, image_url, image_credit, image_source, published_at, created_at";
+  "id, category, headline, card_headline, body, key_points, source_name, source_url, sources, image_url, image_credit, image_source, gallery, published_at, created_at";
 
 /** Published stories, newest first. */
 export async function publishedStories(opts: { limit?: number; category?: CategoryKey } = {}): Promise<Story[]> {

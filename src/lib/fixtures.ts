@@ -15,6 +15,8 @@ const base = {
   edited_at: null,
   image_source: null,
   image_license: "source",
+  photo_options: [{ url: "/_dev/b.jpg", page: "https://example.com", credit: "Soompi" }, { url: "/_dev/c.jpg", page: "https://example.com", credit: "Soompi" }],
+  gallery: [],
   raw_items: { score_reason: "kpop · ok" },
 };
 const body =
