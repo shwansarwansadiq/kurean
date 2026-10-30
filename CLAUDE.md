@@ -83,7 +83,9 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
      commercially usable (CC0, CC BY, CC BY-SA, public domain, KOGL 1) photo of the **same** person, group or place.
      "Same" is decided by names only: the Commons category must equal the name (ignoring case, spaces, hyphens) and
      the file title must name the subject. Recent solo photos win. Never guess identity from faces. (`commons.ts`)
-  2. **Otherwise the source's own photo**, exactly as posted (feed image, else og:image). Every source photo is
+  2. **Otherwise the source's own photo**, exactly as posted: the feed image and each article's og:image are all
+     downloaded and the largest kept (feeds often carry 300 px thumbnails). Under 800 px on the long side → branded
+     card instead (`image_license = 'too-small'`), never a blurry photo. Every source photo is
      copyrighted; agency photos (Getty, Yonhap, Newsen, OSEN, News1, Dispatch…, detected from the address or the
      file's embedded credit) are flagged "high risk" in /admin, where "find a free photo" retries step 1.
   3. Always credited on the site and cards: "وێنە: <source>" or "<artist> · <licence> · Wikimedia Commons".

@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { findFreePhoto, photoSubjects } from "./commons";
+import { imageSize } from "./imagesize";
 import { bidiRuns } from "./site";
 
 const UA = "KureanBot/1.0 (+https://kurean.vercel.app)";
@@ -49,24 +50,29 @@ async function get(url: string, accept: string): Promise<Response | null> {
   }
 }
 
-/** The photo the source posted with the story: the feed's image first, then the article page's og:image. */
-export async function findSourcePhoto(reports: PhotoCandidate[]): Promise<{ image: string; page: string; credit: string } | null> {
-  for (const r of reports) {
-    if (r.image_url) return { image: r.image_url, page: r.url, credit: r.source };
-  }
-  for (const r of reports) {
+/** Below this long side a photo looks blurry on a phone; the branded card is used instead. */
+export const MIN_SOURCE_LONG = 800;
+
+/**
+ * Every photo the sources posted for the story: the feed image (often a small thumbnail) and each article page's
+ * og:image (usually the full-size share image). The largest one is chosen after download.
+ */
+export async function sourcePhotoCandidates(reports: PhotoCandidate[]): Promise<{ image: string; page: string; credit: string }[]> {
+  const out: { image: string; page: string; credit: string }[] = [];
+  for (const r of reports.slice(0, 4)) {
     const res = await get(r.url, "text/html");
-    if (!res) continue;
-    const og = ogImageFromHtml((await res.text()).slice(0, 300_000));
-    if (og) return { image: og, page: r.url, credit: r.source };
+    const og = res ? ogImageFromHtml((await res.text()).slice(0, 300_000)) : null;
+    if (og) out.push({ image: og, page: r.url, credit: r.source });
+    if (r.image_url) out.push({ image: r.image_url, page: r.url, credit: r.source });
   }
-  return null;
+  return out.filter((c, i) => out.findIndex((o) => o.image === c.image) === i);
 }
 
 const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
 
-/** Downloads a photo and copies it into our storage, so the site and cards never depend on another server. */
-async function storePhoto(imageUrl: string, key: string): Promise<{ url: string; bytes: Uint8Array } | null> {
+type Downloaded = { bytes: Uint8Array; type: string; ext: string; width: number; height: number };
+
+async function download(imageUrl: string): Promise<Downloaded | null> {
   const res = await get(imageUrl, "image/avif,image/webp,image/jpeg,image/png,image/*");
   if (!res) return null;
   const type = (res.headers.get("content-type") ?? "").split(";")[0].trim();
@@ -74,10 +80,16 @@ async function storePhoto(imageUrl: string, key: string): Promise<{ url: string;
   if (!ext) return null;
   const bytes = new Uint8Array(await res.arrayBuffer());
   if (!bytes.length || bytes.length > MAX_BYTES) return null;
-  const path = `${key}-${Date.now().toString(36)}.${ext}`;
-  const { error } = await db().storage.from(BUCKET).upload(path, bytes, { contentType: type, upsert: true });
+  const size = imageSize(bytes);
+  return { bytes, type, ext, width: size?.width ?? 0, height: size?.height ?? 0 };
+}
+
+/** Copies a downloaded photo into our storage, so the site and cards never depend on another server. */
+async function store(d: Downloaded, key: string): Promise<string | null> {
+  const path = `${key}-${Date.now().toString(36)}.${d.ext}`;
+  const { error } = await db().storage.from(BUCKET).upload(path, d.bytes, { contentType: d.type, upsert: true });
   if (error) return null;
-  return { url: db().storage.from(BUCKET).getPublicUrl(path).data.publicUrl, bytes };
+  return db().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
 /**
@@ -91,25 +103,40 @@ export async function attachPhoto(storyId: number, headline: string, reports: Ph
   const subjects = photoSubjects(bidiRuns(headline).filter((r) => r.latin).map((r) => r.text));
   const free = subjects.length ? await findFreePhoto(subjects) : null;
   if (free) {
-    const stored = await storePhoto(free.image, `story-${storyId}-free`);
-    if (stored) {
+    const d = await download(free.image);
+    const url = d ? await store(d, `story-${storyId}-free`) : null;
+    if (url) {
       await db()
         .from("stories")
-        .update({ image_url: stored.url, image_source: free.page, image_credit: free.credit, image_license: `free:${free.license}`, photo_checked_at: now })
+        .update({ image_url: url, image_source: free.page, image_credit: free.credit, image_license: `free:${free.license}`, photo_checked_at: now })
         .eq("id", storyId);
       return "free";
     }
   }
-  const found = await findSourcePhoto(reports);
-  const stored = found ? await storePhoto(found.image, `story-${storyId}`) : null;
-  if (!found || !stored) {
+
+  // The source's own photo: download every candidate and keep the largest.
+  let best: { c: { image: string; page: string; credit: string }; d: Downloaded } | null = null;
+  for (const c of await sourcePhotoCandidates(reports)) {
+    const d = await download(c.image);
+    if (d && (!best || d.width * d.height > best.d.width * best.d.height)) best = { c, d };
+  }
+  if (!best || Math.max(best.d.width, best.d.height) < MIN_SOURCE_LONG) {
+    // Only a thumbnail exists: a sharp branded card looks better than a blurry photo.
+    await db()
+      .from("stories")
+      .update({ image_url: null, image_source: null, image_credit: null, image_license: best ? "too-small" : null, photo_checked_at: now })
+      .eq("id", storyId);
+    return null;
+  }
+  const url = await store(best.d, `story-${storyId}`);
+  if (!url) {
     await db().from("stories").update({ photo_checked_at: now }).eq("id", storyId);
     return null;
   }
-  const license = looksLikeAgencyPhoto(found.image, stored.bytes) ? "source-agency" : "source";
+  const license = looksLikeAgencyPhoto(best.c.image, best.d.bytes) ? "source-agency" : "source";
   await db()
     .from("stories")
-    .update({ image_url: stored.url, image_source: found.page, image_credit: found.credit, image_license: license, photo_checked_at: now })
+    .update({ image_url: url, image_source: best.c.page, image_credit: best.c.credit, image_license: license, photo_checked_at: now })
     .eq("id", storyId);
   return license;
 }
