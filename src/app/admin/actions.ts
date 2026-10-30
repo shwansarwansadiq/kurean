@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, adminToken, isAdminToken, passwordMatches } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { CATEGORY_KEYS, type CategoryKey } from "@/lib/site";
-import { regenerate } from "@/lib/writer";
+import { refreshPhoto, regenerate } from "@/lib/writer";
 import { PLATFORMS } from "@/lib/admin-data";
 
 
@@ -106,7 +106,9 @@ export async function saveStory(form: FormData) {
     edited_at: new Date().toISOString(),
   };
   if (CATEGORY_KEYS.includes(category)) update.category = category;
-  if (form.get("remove_photo") === "on") Object.assign(update, { image_url: null, image_source: null, image_credit: null });
+  // Removing a photo (for example after a rights holder's warning) keeps it removed: no automatic re-check.
+  if (form.get("remove_photo") === "on")
+    Object.assign(update, { image_url: null, image_source: null, image_credit: null, image_license: "removed", photo_checked_at: new Date().toISOString() });
   if (!update.headline || !update.body || !update.card_headline) throw new Error("headline, card headline and body are required");
   const { error } = await db().from("stories").update(update).eq("id", id);
   if (error) throw error;
@@ -138,4 +140,13 @@ export async function saveTerm(form: FormData) {
   if (!english || !sorani) return;
   await db().from("glossary").upsert({ english, sorani, note, updated_at: new Date().toISOString() }, { onConflict: "english" });
   revalidatePath("/admin/glossary");
+}
+
+export async function findPhoto(form: FormData) {
+  await requireAdmin();
+  const id = idOf(form);
+  await refreshPhoto(id);
+  refreshSite(id);
+  revalidatePath("/admin");
+  revalidatePath(`/admin/story/${id}`);
 }

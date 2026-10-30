@@ -14,6 +14,7 @@ const base = {
   sticker_done: false,
   edited_at: null,
   image_source: null,
+  image_license: "source",
   raw_items: { score_reason: "kpop · ok" },
 };
 const body =

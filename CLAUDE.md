@@ -78,10 +78,18 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   At most one short attributed quote. Use only facts in the source; invent nothing.
 - Every story credits its source with a link ("سەرچاوە: …").
 - No rumours as facts. Dating, health, death, legal and scandal stories state only what is confirmed and who confirmed it.
-- Images (Shwan's decision, 30 Oct 2026, after being told the copyright and account-strike risk): use the photo exactly
-  as the source posted it (feed image, else the article's og:image), copied to the `story-images` bucket and always
-  credited "وێنە: <source>" on the site and cards. A branded card is the fallback when there is no photo or a fetch is
-  refused (never work around a refusal). If a takedown or claim arrives, remove the photo in /admin (Edit → remove photo).
+- Images (Shwan's decisions, 30 Oct 2026, after being told the copyright and account-strike risk):
+  1. **Free photo first:** look on Wikimedia Commons for a high-resolution (long side ≥1600 px, short ≥900 px),
+     commercially usable (CC0, CC BY, CC BY-SA, public domain, KOGL 1) photo of the **same** person, group or place.
+     "Same" is decided by names only: the Commons category must equal the name (ignoring case, spaces, hyphens) and
+     the file title must name the subject. Recent solo photos win. Never guess identity from faces. (`commons.ts`)
+  2. **Otherwise the source's own photo**, exactly as posted (feed image, else og:image). Every source photo is
+     copyrighted; agency photos (Getty, Yonhap, Newsen, OSEN, News1, Dispatch…, detected from the address or the
+     file's embedded credit) are flagged "high risk" in /admin, where "find a free photo" retries step 1.
+  3. Always credited on the site and cards: "وێنە: <source>" or "<artist> · <licence> · Wikimedia Commons".
+  4. **Takedowns:** Kurean removes any copyrighted photo or text as soon as it is warned. In /admin: Edit → remove
+     photo (it stays removed; the story falls back to the branded card). Article pages tell rights holders to message
+     @kurean.news. Never work around a site's refusal to serve a photo.
 - Group and artist names stay in Latin letters, with the Sorani spelling in brackets the first time.
 - Glossary spellings are mandatory (table `glossary`; the plan doc's Glossary tab is the human-edited copy).
   Example: fandom → کۆمەڵەی هەواداران in articles, فاندۆم allowed in casual captions.

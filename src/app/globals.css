@@ -216,6 +216,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .credits dt { color: var(--ink-2); }
 .credits dd { margin: 0; }
 .credits a { font-family: var(--latin); font-weight: 600; color: var(--berry-deep); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; unicode-bidi: isolate; }
+.rights { margin: 14px 0 0; font-size: 12.5px; line-height: 1.9; color: var(--ink-2); }
 .next {
   margin: 26px var(--gutter) 0; border-radius: 22px; background: var(--berry); color: #fff; padding: 18px 20px;
   display: flex; justify-content: space-between; align-items: center; gap: 14px; transition: transform 140ms var(--ease-out);

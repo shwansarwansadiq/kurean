@@ -91,3 +91,7 @@ alter table stories add column if not exists sticker_done boolean not null defau
 -- Public bucket for story photos
 insert into storage.buckets (id, name, public) values ('story-images', 'story-images', true)
 on conflict (id) do nothing;
+
+-- Free photos first (Wikimedia Commons), copyright flags on source photos
+alter table stories add column if not exists image_license text;
+alter table stories add column if not exists photo_checked_at timestamptz;

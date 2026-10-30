@@ -1,8 +1,10 @@
 import { db } from "./db";
+import { findFreePhoto, photoSubjects } from "./commons";
+import { bidiRuns } from "./site";
 
-const UA = "KureanBot/1.0 (+https://kurean.news)";
+const UA = "KureanBot/1.0 (+https://kurean.vercel.app)";
 const BUCKET = "story-images";
-const MAX_BYTES = 8 * 1024 * 1024;
+const MAX_BYTES = 12 * 1024 * 1024;
 
 export type PhotoCandidate = { image_url: string | null; url: string; source: string };
 
@@ -20,12 +22,25 @@ export function ogImageFromHtml(html: string): string | null {
   return null;
 }
 
+/** Photo agencies and outlets that license and enforce their photos. */
+const AGENCY =
+  /getty ?images|gettyimages|yonhap|yna\.co\.kr|newsen|\bosen\b|news1|newsis|xportsnews|dispatch|tenasia|sports ?chosun|sportschosun|sports ?seoul|ilgan|star ?news|my ?daily|edaily|joongang|chosun|\bap photo\b|associated press|reuters|\bafp\b|\bepa\b|shutterstock|imago/i;
+
+/** Signs that a photo belongs to an agency: its address, or credit/copyright text embedded in the file. */
+export function looksLikeAgencyPhoto(url: string, bytes?: Uint8Array): boolean {
+  if (AGENCY.test(url)) return true;
+  if (!bytes) return false;
+  const head = new TextDecoder("latin1").decode(bytes.subarray(0, 131_072));
+  const meta = head.match(/(copyright|credit|byline|rights|source|creator)[^\n]{0,160}/gi)?.join(" ") ?? "";
+  return AGENCY.test(meta) || /<photoshop:Credit>[^<]*(getty|yonhap|newsen|osen|news1)/i.test(head);
+}
+
 async function get(url: string, accept: string): Promise<Response | null> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": UA, Accept: accept },
       redirect: "follow",
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(15_000),
     });
     // A refusal (403, 429, a bot check) means no photo from this site: we never work around it.
     return res.ok ? res : null;
@@ -35,7 +50,7 @@ async function get(url: string, accept: string): Promise<Response | null> {
 }
 
 /** The photo the source posted with the story: the feed's image first, then the article page's og:image. */
-export async function findPhoto(reports: PhotoCandidate[]): Promise<{ image: string; page: string; credit: string } | null> {
+export async function findSourcePhoto(reports: PhotoCandidate[]): Promise<{ image: string; page: string; credit: string } | null> {
   for (const r of reports) {
     if (r.image_url) return { image: r.image_url, page: r.url, credit: r.source };
   }
@@ -50,8 +65,8 @@ export async function findPhoto(reports: PhotoCandidate[]): Promise<{ image: str
 
 const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
 
-/** Copies the photo into our storage so the site and social cards never depend on the source's server. */
-export async function storePhoto(imageUrl: string, key: string): Promise<string | null> {
+/** Downloads a photo and copies it into our storage, so the site and cards never depend on another server. */
+async function storePhoto(imageUrl: string, key: string): Promise<{ url: string; bytes: Uint8Array } | null> {
   const res = await get(imageUrl, "image/avif,image/webp,image/jpeg,image/png,image/*");
   if (!res) return null;
   const type = (res.headers.get("content-type") ?? "").split(";")[0].trim();
@@ -59,21 +74,42 @@ export async function storePhoto(imageUrl: string, key: string): Promise<string 
   if (!ext) return null;
   const bytes = new Uint8Array(await res.arrayBuffer());
   if (!bytes.length || bytes.length > MAX_BYTES) return null;
-  const path = `${key}.${ext}`;
+  const path = `${key}-${Date.now().toString(36)}.${ext}`;
   const { error } = await db().storage.from(BUCKET).upload(path, bytes, { contentType: type, upsert: true });
   if (error) return null;
-  return db().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  return { url: db().storage.from(BUCKET).getPublicUrl(path).data.publicUrl, bytes };
 }
 
-/** Finds, copies and attaches the source photo to a story. Returns true when a photo was attached. */
-export async function attachPhoto(storyId: number, reports: PhotoCandidate[]): Promise<boolean> {
-  const found = await findPhoto(reports);
-  if (!found) return false;
-  const stored = await storePhoto(found.image, `story-${storyId}`);
-  if (!stored) return false;
-  const { error } = await db()
+/**
+ * Attaches the best photo to a story:
+ * 1. a free, high-resolution photo of the same person, group or place from Wikimedia Commons;
+ * 2. otherwise the photo the source posted (Shwan's decision), marked "source" or "source-agency".
+ * Whatever is chosen is credited, and can be removed from /admin if a rights holder asks.
+ */
+export async function attachPhoto(storyId: number, headline: string, reports: PhotoCandidate[]): Promise<string | null> {
+  const now = new Date().toISOString();
+  const subjects = photoSubjects(bidiRuns(headline).filter((r) => r.latin).map((r) => r.text));
+  const free = subjects.length ? await findFreePhoto(subjects) : null;
+  if (free) {
+    const stored = await storePhoto(free.image, `story-${storyId}-free`);
+    if (stored) {
+      await db()
+        .from("stories")
+        .update({ image_url: stored.url, image_source: free.page, image_credit: free.credit, image_license: `free:${free.license}`, photo_checked_at: now })
+        .eq("id", storyId);
+      return "free";
+    }
+  }
+  const found = await findSourcePhoto(reports);
+  const stored = found ? await storePhoto(found.image, `story-${storyId}`) : null;
+  if (!found || !stored) {
+    await db().from("stories").update({ photo_checked_at: now }).eq("id", storyId);
+    return null;
+  }
+  const license = looksLikeAgencyPhoto(found.image, stored.bytes) ? "source-agency" : "source";
+  await db()
     .from("stories")
-    .update({ image_url: stored, image_source: found.page, image_credit: found.credit })
+    .update({ image_url: stored.url, image_source: found.page, image_credit: found.credit, image_license: license, photo_checked_at: now })
     .eq("id", storyId);
-  return !error;
+  return license;
 }

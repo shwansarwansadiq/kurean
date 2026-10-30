@@ -1,8 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { publishStory, regenerateStory, skipStory } from "@/app/admin/actions";
+import { findPhoto, publishStory, regenerateStory, skipStory } from "@/app/admin/actions";
 import { Bidi } from "@/components/Bidi";
-import { isSensitive, PLATFORM_LABEL, PLATFORMS, type AdminStory } from "@/lib/admin-data";
+import { isSensitive, photoStatus, PLATFORM_LABEL, PLATFORMS, type AdminStory } from "@/lib/admin-data";
 import { CATEGORY_META, ku, soraniDate } from "@/lib/site";
 import { Submit } from "./Submit";
 
@@ -10,6 +10,7 @@ export function StoryCard({ story }: { story: AdminStory }) {
   const meta = CATEGORY_META[story.category];
   const sources = story.sources?.length ? story.sources : [{ name: story.source_name, url: story.source_url, trust: undefined }];
   const sensitive = isSensitive(story);
+  const photo = photoStatus(story);
   return (
     <article className="card" aria-labelledby={`h-${story.id}`}>
       <div className="card-media">
@@ -24,6 +25,15 @@ export function StoryCard({ story }: { story: AdminStory }) {
         {story.image_credit ? <span className="card-credit glass">وێنە: <bdi>{story.image_credit}</bdi></span> : null}
       </div>
       <div className="card-in">
+        <div className={`photo-status ${photo.tone}`}>
+          <span>{photo.label}</span>
+          {photo.tone !== "ok" && story.image_license !== "removed" ? (
+            <form action={findPhoto}>
+              <input type="hidden" name="id" value={story.id} />
+              <Submit className="btn small" busy="دەگەڕێت…">وێنەی ئازاد بدۆزەوە</Submit>
+            </form>
+          ) : null}
+        </div>
         <div className="card-top">
           <span>
             #{ku(story.id)} · {soraniDate(story.created_at, false)}

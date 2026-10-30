@@ -102,6 +102,10 @@ export default async function StoryPage({ params }: Params) {
             <dt>نووسینی کوردی</dt>
             <dd>کوریەن</dd>
           </dl>
+          <p className="rights">
+            خاوەنی ئەم وێنەیە یان دەقێکی ئێرەیت و دەتەوێت لاببرێت؟ نامە بنێرە بۆ <bdi className="lat">@kurean.news</bdi> و
+            بە زووترین کات لای دەبەین.
+          </p>
         </section>
         {next ? (
           <Link href={storyHref(next)} className="next">

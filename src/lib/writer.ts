@@ -255,7 +255,7 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
       // The photo as the source posted it, most trusted report first.
       const rows = [item, ...same];
       const byId = new Map(rows.map((r) => [r.id, r]));
-      await attachPhoto(inserted.id, ordered.map((r) => photoCandidate(byId.get(r.id)!))).catch((e) =>
+      await attachPhoto(inserted.id, story.headline, ordered.map((r) => photoCandidate(byId.get(r.id)!))).catch((e) =>
         console.error("photo failed", inserted.id, e),
       );
 
@@ -318,29 +318,43 @@ export async function regenerate(storyId: number): Promise<void> {
   if (updateError) throw updateError;
 
   const byId = new Map(rows.map((r) => [r.id, r]));
-  await attachPhoto(storyId, ordered.map((r) => photoCandidate(byId.get(r.id)!))).catch(() => false);
+  await attachPhoto(storyId, written.headline, ordered.map((r) => photoCandidate(byId.get(r.id)!))).catch(() => null);
 }
 
-/** Finds and attaches the source photo for stories written before photos were collected. */
-export async function backfillPhotos(limit = 10): Promise<number> {
+/**
+ * Photo pass for stories not checked yet (and ones asked to be checked again from /admin):
+ * looks for a free photo of the same subject first, then the source's photo.
+ */
+export async function backfillPhotos(limit = 4): Promise<number> {
   const { data, error } = await db()
     .from("stories")
-    .select("id, sources")
-    .is("image_url", null)
+    .select("id, headline, sources")
+    .is("photo_checked_at", null)
     .in("status", ["pending", "published"])
     .order("id", { ascending: false })
     .limit(limit);
   if (error) throw error;
   let done = 0;
-  for (const s of (data ?? []) as { id: number; sources: { name: string; url: string }[] }[]) {
+  for (const s of (data ?? []) as { id: number; headline: string; sources: { name: string; url: string }[] }[]) {
     const urls = s.sources.map((x) => x.url);
     const { data: raws } = await db().from("raw_items").select("url, image_url").in("url", urls);
     const img = new Map((raws ?? []).map((r: { url: string; image_url: string | null }) => [r.url, r.image_url]));
-    const ok = await attachPhoto(
+    const result = await attachPhoto(
       s.id,
+      s.headline,
       s.sources.map((x) => ({ image_url: img.get(x.url) ?? null, url: x.url, source: x.name })),
-    ).catch(() => false);
-    if (ok) done++;
+    ).catch(() => null);
+    if (result) done++;
   }
   return done;
+}
+
+/** /admin "find another photo": free photo of the same subject first, then the source's photo. */
+export async function refreshPhoto(storyId: number): Promise<string | null> {
+  const { data, error } = await db().from("stories").select("id, headline, sources").eq("id", storyId).single();
+  if (error) throw error;
+  const s = data as { id: number; headline: string; sources: { name: string; url: string }[] };
+  const { data: raws } = await db().from("raw_items").select("url, image_url").in("url", s.sources.map((x) => x.url));
+  const img = new Map((raws ?? []).map((r: { url: string; image_url: string | null }) => [r.url, r.image_url]));
+  return attachPhoto(s.id, s.headline, s.sources.map((x) => ({ image_url: img.get(x.url) ?? null, url: x.url, source: x.name })));
 }

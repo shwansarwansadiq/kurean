@@ -29,6 +29,7 @@ export type AdminStory = {
   image_url: string | null;
   image_credit: string | null;
   image_source: string | null;
+  image_license: string | null;
   platforms: string[];
   sticker_done: boolean;
   edited_at: string | null;
@@ -76,3 +77,13 @@ export async function counts(): Promise<Record<string, number>> {
 }
 
 export const isSensitive = (s: AdminStory) => (s.raw_items?.score_reason ?? "").split(" · ")[1] === "sensitive";
+
+/** What the dashboard says about a story's photo and its copyright risk. */
+export function photoStatus(s: Pick<AdminStory, "image_url" | "image_license">): { label: string; tone: "ok" | "warn" | "risk" | "none" } {
+  const l = s.image_license ?? "";
+  if (l.startsWith("free:")) return { label: `وێنەی ئازاد · ${l.slice(5)}`, tone: "ok" };
+  if (l === "source-agency") return { label: "وێنەی ئاژانس: مەترسی کۆپیرایتی زۆرە", tone: "risk" };
+  if (l === "removed") return { label: "وێنە لابرا: کارتی براند", tone: "none" };
+  if (s.image_url) return { label: "وێنەی سەرچاوە: کۆپیرایتی هەیە", tone: "warn" };
+  return { label: "بێ وێنە: کارتی براند", tone: "none" };
+}
