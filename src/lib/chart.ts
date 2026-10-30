@@ -228,8 +228,9 @@ export async function refreshChart(opts: { force?: boolean } = {}): Promise<{ ok
   const { data: have } = await db().from("chart_weeks").select("id").eq("id", id).maybeSingle();
 
   const ids = chart.entries.map((e) => e.id);
-  const { data: known } = await db().from("chart_songs").select("id").in("id", ids);
-  const knownIds = new Set((known ?? []).map((k) => k.id as string));
+  const { data: known } = await db().from("chart_songs").select("id, title_latin, artist_latin").in("id", ids);
+  // Songs whose stored names are still in Korean letters are asked again.
+  const knownIds = new Set((known ?? []).filter((k) => isRomanized(k)).map((k) => k.id as string));
   const fresh = chart.entries.filter((e) => !knownIds.has(e.id));
   if (have && !fresh.length && !opts.force) return { ok: true, id, stored: false, named: 0 };
 
