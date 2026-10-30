@@ -96,12 +96,14 @@ export type SongForLookup = { id: string; title: string; artist: string; title_l
 const titlesOf = (s: SongForLookup) => [s.title, s.title_latin ?? ""].filter(Boolean);
 const artistsOf = (s: SongForLookup) => artistNames(s.artist, s.artist_latin);
 
-export async function findYouTube(s: SongForLookup, key: string): Promise<{ id: string; channel: string } | null> {
+/** The official video, null when there is none, or "unavailable" when YouTube did not answer (quota used up, outage). */
+export async function findYouTube(s: SongForLookup, key: string): Promise<{ id: string; channel: string } | null | "unavailable"> {
   const main = artistsOf(s).find((a) => !/[가-힣]/.test(a)) ?? s.artist;
   // The title as the chart writes it (often Korean): official uploads are titled that way.
   const q = `${main} ${s.title.replace(/\((feat|prod|narr|with)\.?[^)]*\)/gi, "").trim()} MV`;
   const params = new URLSearchParams({ part: "snippet", type: "video", videoEmbeddable: "true", maxResults: "8", q, key });
   const data = await getJson(`https://www.googleapis.com/youtube/v3/search?${params}`);
+  if (!data) return "unavailable";
   const items = (data?.items as { id?: { videoId?: string }; snippet?: { title?: string; channelTitle?: string } }[]) ?? [];
   let best: { hit: Hit; s: number } | null = null;
   for (const it of items) {
@@ -209,6 +211,8 @@ export async function refreshListenLinks(songIds: string[]): Promise<{ youtube: 
     if (key && !r.youtube_id) {
       searches++;
       const yt = await findYouTube(r, key);
+      // YouTube did not answer (usually the daily quota): stop and try these songs again tomorrow.
+      if (yt === "unavailable") break;
       if (yt) {
         patch.youtube_id = yt.id;
         patch.youtube_channel = yt.channel;
