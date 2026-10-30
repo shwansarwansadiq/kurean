@@ -197,7 +197,7 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   ready clip in `social_queue` 20 min later (one waiting at a time; ≥60 days between repeats); the 5-min publish job
   posts it as IG + FB video stories (`instagramVideoStory`, `facebookVideoStory` in `meta.ts`). Music: four original
   loops composed in code for Kurean (`video/music-compose.py` → `video/public/music/*.m4a`: han-river, jeju-breeze,
-  seoul-night, blossom), so they are Kurean's own and royalty-free. Source: **Pixabay vertical videos**
+  seoul-night, blossom), so they are Kurean's own and royalty-free. Source: **Pixabay videos** (vertical full HD, or wide 4K cropped to the centre)
   (`PIXABAY_API_KEY`; Pexels paused new API keys on 31 Oct; Pexels code kept for `PEXELS_API_KEY`) (migrate-011, 012).
   Pexels rules: credit the photographer, our design on top, no bulk copying, never for model training.
 

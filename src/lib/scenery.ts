@@ -104,11 +104,12 @@ type PixabayVideo = {
   videos: Record<string, { url: string; width: number; height: number }>;
 };
 
-/** A vertical Pixabay video with a file of at least 1080×1920 (the smallest such, for quick renders). */
+/** A Pixabay video that fills a 9:16 frame sharply: vertical full HD, or wide 4K cropped to its centre. */
 export function pixabayCandidate(v: PixabayVideo, place: Place): Candidate | null {
   if (v.duration < 6 || !namesPlace(`${v.tags} ${v.pageURL}`, place)) return null;
   const file = Object.values(v.videos ?? {})
-    .filter((f) => f?.url && f.height > f.width && f.width >= 1080 && f.height >= 1920)
+    // Vertical full HD, or a wide 4K file whose centre cut to 9:16 is still at least 1080×1920 wide-and-tall.
+    .filter((f) => f?.url && (f.height > f.width ? f.width >= 1080 && f.height >= 1920 : f.height >= 1920))
     .sort((a, b) => a.width - b.width)[0];
   if (!file) return null;
   return {

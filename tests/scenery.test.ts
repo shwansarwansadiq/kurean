@@ -50,8 +50,9 @@ describe("scenery from Pixabay", () => {
     expect(c.source).toBe("pixabay");
     expect(c.photographer_url).toBe("https://pixabay.com/users/seoulwalker-77/");
   });
-  it("refuses wide videos and other places", () => {
-    expect(pixabayCandidate({ ...v, videos: { large: { url: "w.mp4", width: 3840, height: 2160 } } }, palace)).toBeNull();
+  it("takes wide 4K (cropped to its centre) but refuses wide full HD and other places", () => {
+    expect(pixabayCandidate({ ...v, videos: { large: { url: "w4k.mp4", width: 3840, height: 2160 } } }, palace)?.url).toBe("w4k.mp4");
+    expect(pixabayCandidate({ ...v, videos: { large: { url: "w.mp4", width: 1920, height: 1080 } } }, palace)).toBeNull();
     expect(pixabayCandidate({ ...v, tags: "temple, kyoto", pageURL: "https://pixabay.com/videos/temple-5/" }, palace)).toBeNull();
   });
 });
