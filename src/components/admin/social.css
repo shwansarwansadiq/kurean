@@ -21,7 +21,7 @@
 .sc-story .sc-panel { bottom: 270px; }
 .sc-panel h3 { font-weight: 900; font-size: 72px; line-height: 1.5; margin: 0 0 26px; }
 .sc-panel h3 .lat { font-weight: 800; }
-.sc-foot { display: flex; justify-content: space-between; align-items: center; gap: 20px; font-size: 30px; }
+.sc-foot { display: flex; justify-content: flex-start; align-items: center; gap: 22px; }
+.sc-more { font-weight: 800; font-size: 38px; line-height: 1.4; }
 .sc-link { font: 700 34px/1 var(--latin); background: #fff; color: var(--berry-deep); padding: 18px 30px; border-radius: 999px; }
-.sc-credit { opacity: 0.85; }
 

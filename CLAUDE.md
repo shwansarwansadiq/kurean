@@ -89,7 +89,8 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
      card instead (`image_license = 'too-small'`), never a blurry photo. Every source photo is
      copyrighted; agency photos (Getty, Yonhap, Newsen, OSEN, News1, Dispatch…, detected from the address or the
      file's embedded credit) are flagged "high risk" in /admin, where "find a free photo" retries step 1.
-  3. Always credited on the site and cards: "وێنە: <source>" or "<artist> · <licence> · Wikimedia Commons".
+  3. Always credited: on the site "وێنە: <source>" or "<artist> · <licence> · Wikimedia Commons"; on social posts the
+     credit is in the caption ("📷 …"), not on the image (Shwan, 30 Oct). Card footer: "زانیاری زیاتر لە kurean.news".
   4. **Takedowns:** Kurean removes any copyrighted photo or text as soon as it is warned. In /admin: Edit → remove
      photo (it stays removed; the story falls back to the branded card). Article pages tell rights holders to message
      @kurean.news. Never work around a site's refusal to serve a photo.

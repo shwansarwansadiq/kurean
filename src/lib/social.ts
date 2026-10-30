@@ -4,15 +4,17 @@ import { renderCards } from "./render-card";
 
 export type SocialResult = { platform: string; kind: "feed" | "story"; ok: boolean; id?: string; error?: string };
 
-type StoryRow = { id: number; caption_instagram: string; caption_facebook: string };
+type StoryRow = { id: number; caption_instagram: string; caption_facebook: string; image_credit?: string | null };
 
 const shortLink = (id: number) => `https://kurean.news/n/${id}`;
 
 /** Facebook links are clickable in posts; Instagram's are not, so the caption points to the link in the design. */
 export function captions(s: StoryRow) {
+  // The photo credit is no longer printed on the image (Shwan, 30 Oct), so it goes at the end of the caption.
+  const credit = s.image_credit ? `\n📷 ${s.image_credit}` : "";
   return {
-    facebook: `${s.caption_facebook.trim()}\n\n${shortLink(s.id)}`,
-    instagram: `${s.caption_instagram.trim()}\n\nهەواڵی تەواو: kurean.news/n/${s.id}`,
+    facebook: `${s.caption_facebook.trim()}\n\n${shortLink(s.id)}${credit}`,
+    instagram: `${s.caption_instagram.trim()}\n\nهەواڵی تەواو: kurean.news/n/${s.id}${credit}`,
   };
 }
 
@@ -23,7 +25,7 @@ export function captions(s: StoryRow) {
 export async function publishSocial(storyId: number, platforms: string[]): Promise<SocialResult[]> {
   const wanted = platforms.filter((p) => p === "instagram" || p === "facebook");
   if (!wanted.length) return [];
-  const { data, error } = await db().from("stories").select("id, caption_instagram, caption_facebook").eq("id", storyId).single<StoryRow>();
+  const { data, error } = await db().from("stories").select("id, caption_instagram, caption_facebook, image_credit").eq("id", storyId).single<StoryRow>();
   if (error) throw error;
   const cap = captions(data);
 

@@ -7,4 +7,9 @@ describe("social captions", () => {
     expect(c.facebook).toBe("FB text\n\nhttps://kurean.news/n/12");
     expect(c.instagram).toBe("IG text\n\nهەواڵی تەواو: kurean.news/n/12");
   });
+  it("credits the photo at the end of the caption", () => {
+    const c = captions({ id: 3, caption_facebook: "FB", caption_instagram: "IG", image_credit: "Korea Herald" });
+    expect(c.instagram.endsWith("\n📷 Korea Herald")).toBe(true);
+    expect(c.facebook.endsWith("\n📷 Korea Herald")).toBe(true);
+  });
 });

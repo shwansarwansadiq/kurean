@@ -39,12 +39,8 @@ export function SocialCard({ story, format, full = false }: { story: CardStory; 
             <Bidi text={story.card_headline} />
           </h3>
           <div className="sc-foot">
-            <span dir="ltr" className="sc-link">kurean.news/n/{story.id}</span>
-            {story.image_credit ? (
-              <span className="sc-credit">
-                وێنە: <bdi>{story.image_credit}</bdi>
-              </span>
-            ) : null}
+            <span className="sc-more">زانیاری زیاتر لە</span>
+            <span dir="ltr" className="sc-link">kurean.news</span>
           </div>
         </div>
       </div>
