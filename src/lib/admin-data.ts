@@ -32,6 +32,9 @@ export type AdminStory = {
   image_license: string | null;
   photo_options: { url: string; page: string; credit: string }[];
   gallery: { url: string; credit: string | null; page: string | null }[];
+  kind?: string | null;
+  chart_week?: string | null;
+  chart_top?: import("./chart-story").ChartTopItem[] | null;
   platforms: string[];
   sticker_done: boolean;
   edited_at: string | null;

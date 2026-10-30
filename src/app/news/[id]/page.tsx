@@ -59,6 +59,25 @@ export default async function StoryPage({ params }: Params) {
             </p>
           ))}
         </div>
+        {story.kind === "chart" && story.chart_top?.length ? (
+          <section className="art-chart" aria-label="١٠ گۆرانیی سەرەوە">
+            <ol>
+              {story.chart_top.map((m) => (
+                <li key={m.rank}>
+                  <span className="n">{ku(m.rank)}</span>
+                  <span className="t">
+                    <b className="lat" dir="ltr">{m.title}</b>
+                    <span>
+                      <bdi className="lat">{m.artist}</bdi>
+                      {m.artist_ckb ? <> · {m.artist_ckb}</> : null}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <a className="art-chart-all" href="#kchart-h">هەموو ١٠٠ گۆرانییەکە ببینە و بیکەرەوە</a>
+          </section>
+        ) : null}
         {story.gallery?.length ? (
           <section className="gallery" aria-label="وێنەکان">
             {story.gallery.map((g) => (

@@ -37,7 +37,8 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
 - Migrations: `supabase/migrate-002-site.sql` (photo, platforms, sticker columns + `story-images` storage bucket),
   `migrate-003-photos.sql` (photo licence flags), `migrate-004-social.sql` (`social_posts`),
   `migrate-005-photos-analytics.sql` (photo options, gallery, `analytics_events`, `kurean_analytics()`),
-  `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids). Env also: `META_TOKEN`.
+  `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids),
+  `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -146,6 +147,11 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   visible ≥200 px, auto-next down the chart); Spotify is a link out: to Spotify's search for the song (no key), or to the
   track when `SPOTIFY_CLIENT_ID`/`SECRET` are set — Spotify's Web API needs a Premium owner since Feb 2026, so not set.
   Env: `YOUTUBE_API_KEY` (migrate-007). Quota: ≤40 YouTube searches a day; videos re-checked every 30 days.
+  **Weekly chart story (Shwan, 30 Oct):** when a new week is stored, `chart-story.ts` writes a Sorani top-10 article
+  (Sonnet, facts from the chart only) as a *pending* story (`kind = 'chart'`, `chart_week`, `chart_top` frozen top 10,
+  source Circle Chart, no photo). Publishing it in /admin posts the article plus top-10 feed and story cards
+  (`SocialCards.tsx` → `ChartCard`); the article shows the top 10 and links to the full chart. Regenerate rewrites it
+  from the same week. Never auto-published: it waits for Shwan's approval like every story (migrate-008).
   Melon was refused (robots.txt blocks it); Spotify's API no longer serves its Korea playlist to new apps.
 - **Analytics (`/admin/analytics`, from Shwan's spec 30 Oct):** first-party tracker `components/Tracker.tsx` → `/api/t`
   → `analytics_events`; no cookies, no IP stored; visitor = salted daily hash, or a stable random ID after consent

@@ -27,6 +27,25 @@ export const FIXTURES: AdminStory[] = [
   { ...base, id: 7, category: "kdrama_film", headline: "تیزەری درامای «Nine to Six» بڵاوکرایەوە", card_headline: "تیزەری «Nine to Six» بڵاوکرایەوە", body, key_points: ["تیزەری یەکەم بڵاوکرایەوە.", "پەخشی یەکەم: چوارشەممە ٢٥ی تشرینی دووەم.", "٩ی شەو لە کۆریا، ٣ی پاشنیوەڕۆ لە هەولێر."], source_name: "SBS Star", source_url: "https://sbsstar.net/x", sources: [{ name: "SBS Star", url: "https://sbsstar.net/x", trust: 3 }, { name: "Soompi", url: "https://soompi.com/x", trust: 2 }], image_url: "/_dev/b.jpg", image_credit: "SBS Star", published_at: "2026-10-30T06:00:00Z", created_at: "2026-10-30T05:00:00Z" },
   { ...base, id: 6, category: "kdrama_film", headline: "Claudia Kim دەچێتە ناو درامای «Sacred Jewel»", card_headline: "Claudia Kim لە «Sacred Jewel»", body, key_points: ["ڕۆڵێکی سەرەکی وەردەگرێت."], source_name: "Soompi", source_url: "https://soompi.com/y", sources: [{ name: "Soompi", url: "https://soompi.com/y", trust: 2 }], image_url: null, image_credit: null, published_at: "2026-10-30T05:00:00Z", created_at: "2026-10-30T04:00:00Z" },
   { ...base, id: 5, category: "korea_news", headline: "ئەکتەر Choi Bool-am لە تەمەنی ٨٧ ساڵیدا کۆچی دوایی کرد", card_headline: "Choi Bool-am کۆچی دوایی کرد", body, key_points: ["هەواڵەکە لەلایەن بنەماڵەکەیەوە پشتڕاستکرایەوە."], source_name: "Yonhap News", source_url: "https://yna.co.kr/x", sources: [{ name: "Korea Herald", url: "https://koreaherald.com/y", trust: 3 }, { name: "Yonhap News", url: "https://yna.co.kr/x", trust: 3 }, { name: "Soompi", url: "https://soompi.com/z", trust: 2 }], image_url: "/_dev/c.jpg", image_credit: "Yonhap News", published_at: "2026-10-30T04:00:00Z", created_at: "2026-10-30T03:00:00Z", raw_items: { score_reason: "korea_news · sensitive · death" } },
+  {
+    ...base, id: 9, category: "kpop", kind: "chart", chart_week: "circle-digital-2026-43",
+    headline: "ڕیزبەندیی هەفتانەی کۆریا: «NEON»ی A2O لە پلەی یەکەم دەمێنێتەوە", card_headline: "١٠ گۆرانیی سەرەوەی کۆریا", body,
+    key_points: ["«NEON» بۆ هەفتەی دووەم یەکەمە.", "SOYEON بەرز بووەوە بۆ پلەی دووەم.", "IVE بە گۆرانییەکی نوێ هاتە ناو ١٠ی سەرەوە."],
+    source_name: "Circle Chart", source_url: "https://circlechart.kr", sources: [{ name: "Circle Chart", url: "https://circlechart.kr", trust: 3 }],
+    image_url: null, image_credit: null, published_at: "2026-10-30T08:00:00Z", created_at: "2026-10-30T08:00:00Z",
+    chart_top: [
+      { rank: 1, title: "NEON", artist: "A2O, A2O LITE", artist_ckb: "ئەی تو ئۆ", move: "same", change: 0 },
+      { rank: 2, title: "Toesahalgeyeo (Narr. Gian84)", artist: "SOYEON", artist_ckb: "سۆیۆن", move: "up", change: 1 },
+      { rank: 3, title: "Kkumkkudeon Eorireun Doeeotnayo?", artist: "Meomureu", artist_ckb: "مەمورو", move: "down", change: 1 },
+      { rank: 4, title: "LOVE ATTACK", artist: "RESCENE", artist_ckb: "ڕیسین", move: "same", change: 0 },
+      { rank: 5, title: "Deja Vu", artist: "RESCENE", artist_ckb: "ڕیسین", move: "up", change: 2 },
+      { rank: 6, title: "REDRED", artist: "CORTIS", artist_ckb: "کۆرتیس", move: "down", change: 1 },
+      { rank: 7, title: "Gapjagi", artist: "I.O.I", artist_ckb: "ئای ئۆ ئای", move: "down", change: 1 },
+      { rank: 8, title: "BAD", artist: "ATEEZ", artist_ckb: "ئەیتیز", move: "up", change: 1 },
+      { rank: 9, title: "Pretty Girl", artist: "RESCENE", artist_ckb: "ڕیسین", move: "down", change: 1 },
+      { rank: 10, title: "Looks Can Kill", artist: "IVE", artist_ckb: "ئایڤ", move: "new", change: 0 },
+    ],
+  },
 ];
 
 /* Local preview of the footer chart: names as Circle Chart writes them (week 43, 2026), Kurdish names sample wording. */

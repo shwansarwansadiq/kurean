@@ -248,7 +248,27 @@ async function writeNames(songs: { title: string; artist: string }[]): Promise<N
 // ---------- Refresh (cron) and read (site) ----------
 
 /** Reads the current week; stores it when it is new or still missing names. Returns what happened. */
-type RefreshResult = { ok: boolean; id?: string; stored?: boolean; named?: number; reason?: string; links?: Awaited<ReturnType<typeof refreshListenLinks>> };
+type RefreshResult = {
+  ok: boolean;
+  id?: string;
+  stored?: boolean;
+  named?: number;
+  reason?: string;
+  links?: Awaited<ReturnType<typeof refreshListenLinks>>;
+  story?: number | string | null;
+};
+
+/** The week's chart story for /admin (written once per week; an error never stops the chart). */
+async function weeklyStory(id: string): Promise<number | string | null> {
+  try {
+    const week = await chartWeek(id);
+    if (!week) return null;
+    const { prepareChartStory } = await import("./chart-story");
+    return await prepareChartStory(week);
+  } catch (e) {
+    return `story failed: ${e instanceof Error ? e.message : String(e)}`;
+  }
+}
 
 export async function refreshChart(opts: { force?: boolean } = {}): Promise<RefreshResult> {
   const chart = await fetchCircleChart();
@@ -261,7 +281,9 @@ export async function refreshChart(opts: { force?: boolean } = {}): Promise<Refr
   // Songs whose stored names are still in Korean letters are asked again.
   const knownIds = new Set((known ?? []).filter((k) => isRomanized(k)).map((k) => k.id as string));
   const fresh = chart.entries.filter((e) => !knownIds.has(e.id));
-  if (have && !fresh.length && !opts.force) return { ok: true, id, stored: false, named: 0, links: await refreshListenLinks(ids) };
+  if (have && !fresh.length && !opts.force) {
+    return { ok: true, id, stored: false, named: 0, links: await refreshListenLinks(ids), story: await weeklyStory(id) };
+  }
 
   // New songs get their Kurdish-reader names in batches of 50.
   let named = 0;
@@ -286,7 +308,9 @@ export async function refreshChart(opts: { force?: boolean } = {}): Promise<Refr
     fetched_at: new Date().toISOString(),
   });
   if (error) return { ok: false, id, reason: error.message };
-  return { ok: true, id, stored: true, named, links: await refreshListenLinks(ids) };
+  const links = await refreshListenLinks(ids);
+  const story = await weeklyStory(id);
+  return { ok: true, id, stored: true, named, links, story };
 }
 
 /** The newest stored week with names joined in, or null. */
@@ -301,21 +325,29 @@ export async function latestChart(): Promise<ChartWeek | null> {
       .order("week", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (!data) return null;
-    const week = data as ChartWeek;
-    const { data: names } = await db()
-      .from("chart_songs")
-      .select("id, title_latin, artist_latin, artist_ckb, youtube_id, spotify_id")
-      .in("id", week.entries.map((e) => e.id));
-    const byId = new Map((names ?? []).map((n) => [n.id as string, n as Names]));
-    week.entries = week.entries.map((e) => {
-      const n = byId.get(e.id);
-      return { ...e, ...n, title_latin: latinName(n?.title_latin, e.title), artist_latin: latinName(n?.artist_latin, e.artist) };
-    });
-    return week;
+    return data ? await withNames(data as ChartWeek) : null;
   } catch {
     return null; // the footer never breaks a page
   }
+}
+
+/** One stored week by id ('circle-digital-2026-43'), with names joined in. */
+export async function chartWeek(id: string): Promise<ChartWeek | null> {
+  const { data } = await db().from("chart_weeks").select("id, year, week, period, entries, fetched_at").eq("id", id).maybeSingle();
+  return data ? withNames(data as ChartWeek) : null;
+}
+
+async function withNames(week: ChartWeek): Promise<ChartWeek> {
+  const { data: names } = await db()
+    .from("chart_songs")
+    .select("id, title_latin, artist_latin, artist_ckb, youtube_id, spotify_id")
+    .in("id", week.entries.map((e) => e.id));
+  const byId = new Map((names ?? []).map((n) => [n.id as string, n as Names]));
+  week.entries = week.entries.map((e) => {
+    const n = byId.get(e.id);
+    return { ...e, ...n, title_latin: latinName(n?.title_latin, e.title), artist_latin: latinName(n?.artist_latin, e.artist) };
+  });
+  return week;
 }
 
 /** "2026.10.18~2026.10.24" → dates, for the Sorani heading. */

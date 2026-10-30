@@ -28,7 +28,7 @@ export function parseScoreReason(reason: string): { category: Category; sensitiv
 }
 
 export const SCORE_MODEL = process.env.KUREAN_SCORE_MODEL ?? "claude-haiku-5-5";
-const WRITE_MODEL = process.env.KUREAN_WRITE_MODEL ?? "claude-sonnet-5-5";
+export const WRITE_MODEL = process.env.KUREAN_WRITE_MODEL ?? "claude-sonnet-5-5";
 
 /** Stories prepared per day (the plan: 5-8). */
 export const DAILY_LIMIT = Number(process.env.KUREAN_DAILY_LIMIT ?? 8);
@@ -181,7 +181,7 @@ async function storiesToday(): Promise<number> {
   return count ?? 0;
 }
 
-async function glossary(): Promise<GlossaryTerm[]> {
+export async function glossary(): Promise<GlossaryTerm[]> {
   const { data, error } = await db().from("glossary").select("english, sorani, note").order("english");
   if (error) throw error;
   return (data ?? []) as GlossaryTerm[];
@@ -283,6 +283,11 @@ type StoryRow = {
 
 /** Rewrites a pending story from the same source reports (the dashboard's Regenerate). */
 export async function regenerate(storyId: number): Promise<void> {
+  const { data: kind } = await db().from("stories").select("kind, chart_week").eq("id", storyId).single<{ kind: string; chart_week: string | null }>();
+  if (kind?.kind === "chart" && kind.chart_week) {
+    const [{ rewriteChartStory }, { chartWeek }] = await Promise.all([import("./chart-story"), import("./chart")]);
+    return rewriteChartStory(storyId, kind.chart_week, chartWeek);
+  }
   const { data: story, error } = await db()
     .from("stories")
     .select("id, category, raw_item_id, sources")
