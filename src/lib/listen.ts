@@ -98,7 +98,8 @@ const artistsOf = (s: SongForLookup) => artistNames(s.artist, s.artist_latin);
 
 export async function findYouTube(s: SongForLookup, key: string): Promise<{ id: string; channel: string } | null> {
   const main = artistsOf(s).find((a) => !/[가-힣]/.test(a)) ?? s.artist;
-  const q = `${main} ${s.title_latin ?? s.title} official MV`;
+  // The title as the chart writes it (often Korean): official uploads are titled that way.
+  const q = `${main} ${s.title.replace(/\((feat|prod|narr|with)\.?[^)]*\)/gi, "").trim()} MV`;
   const params = new URLSearchParams({ part: "snippet", type: "video", videoEmbeddable: "true", maxResults: "8", q, key });
   const data = await getJson(`https://www.googleapis.com/youtube/v3/search?${params}`);
   const items = (data?.items as { id?: { videoId?: string }; snippet?: { title?: string; channelTitle?: string } }[]) ?? [];
