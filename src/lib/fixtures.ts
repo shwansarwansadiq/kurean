@@ -28,3 +28,48 @@ export const FIXTURES: AdminStory[] = [
   { ...base, id: 6, category: "kdrama_film", headline: "Claudia Kim دەچێتە ناو درامای «Sacred Jewel»", card_headline: "Claudia Kim لە «Sacred Jewel»", body, key_points: ["ڕۆڵێکی سەرەکی وەردەگرێت."], source_name: "Soompi", source_url: "https://soompi.com/y", sources: [{ name: "Soompi", url: "https://soompi.com/y", trust: 2 }], image_url: null, image_credit: null, published_at: "2026-10-30T05:00:00Z", created_at: "2026-10-30T04:00:00Z" },
   { ...base, id: 5, category: "korea_news", headline: "ئەکتەر Choi Bool-am لە تەمەنی ٨٧ ساڵیدا کۆچی دوایی کرد", card_headline: "Choi Bool-am کۆچی دوایی کرد", body, key_points: ["هەواڵەکە لەلایەن بنەماڵەکەیەوە پشتڕاستکرایەوە."], source_name: "Yonhap News", source_url: "https://yna.co.kr/x", sources: [{ name: "Korea Herald", url: "https://koreaherald.com/y", trust: 3 }, { name: "Yonhap News", url: "https://yna.co.kr/x", trust: 3 }, { name: "Soompi", url: "https://soompi.com/z", trust: 2 }], image_url: "/_dev/c.jpg", image_credit: "Yonhap News", published_at: "2026-10-30T04:00:00Z", created_at: "2026-10-30T03:00:00Z", raw_items: { score_reason: "korea_news · sensitive · death" } },
 ];
+
+/* Local preview of the footer chart: names as Circle Chart writes them (week 43, 2026), Kurdish names sample wording. */
+const chartRows: [string, string, number | null, string?, string?, string?, string?][] = [
+  ["NEON", "A2O, A2O LITE", 1, "NEON", "", "A2O, A2O LITE", "ئەی تو ئۆ، ئەی تو ئۆ لایت"],
+  ["퇴사할게여 (Narr. 기안84)", "소연 (SOYEON)", 3, "Toesahalgeyeo (Narr. Kian84)", "دەستلەکار دەکێشمەوە", "SOYEON", "سۆیۆن"],
+  ["꿈꾸던 어른이 되었나요?", "머무르", 2, "Kkumkkudeon Eoreuni Doeeonnayo?", "ئەو گەورەیە بوویت کە خەونت پێوە دەبینی؟", "Meomureu", "مەمورو"],
+  ["LOVE ATTACK", "RESCENE (리센느)", 4, "LOVE ATTACK", "", "RESCENE", "ڕیسین"],
+  ["Deja Vu", "RESCENE (리센느)", 7, "Deja Vu", "", "RESCENE", "ڕیسین"],
+  ["REDRED", "CORTIS (코르티스)", 5, "REDRED", "", "CORTIS", "کۆرتیس"],
+  ["갑자기", "아이오아이 (I.O.I)", 6, "Gapjagi", "لەناکاو", "I.O.I", "ئای ئۆ ئای"],
+  ["BAD", "ATEEZ (에이티즈)", 9, "BAD", "", "ATEEZ", "ئەیتیز"],
+  ["Pretty Girl", "RESCENE (리센느)", 8, "Pretty Girl", "", "RESCENE", "ڕیسین"],
+  ["Looks Can Kill", "IVE (아이브)", null, "Looks Can Kill", "", "IVE", "ئایڤ"],
+  ["LEMONADE", "aespa", 10, "LEMONADE", "", "aespa", "ئێسپا"],
+  ["노스탈지아", "BIG Naughty (서동현)", 13, "Noseutalji-a", "نۆستالجیا", "BIG Naughty", "بیگ نۆتی"],
+  ["Drowning", "WOODZ (조승연)", 12, "Drowning", "", "WOODZ", "وودز"],
+  ["사랑하게 될 거야", "한로로", 16, "Saranghage Doel Geoya", "خۆشت دەوێم", "Hanroro", "هانرۆرۆ"],
+  ["CRASH", "ALLDAY PROJECT", 11, "CRASH", "", "ALLDAY PROJECT", "ئۆڵدەی پرۆجێکت"],
+];
+export const FIXTURE_CHART = {
+  id: "circle-digital-2026-43",
+  year: 2026,
+  week: 43,
+  period: "2026.10.18~2026.10.24",
+  fetched_at: "2026-10-30T06:00:00Z",
+  entries: Array.from({ length: 100 }, (_, i) => {
+    const [title, artist, prev, title_latin, title_ckb, artist_latin, artist_ckb] = chartRows[i % chartRows.length];
+    const rank = i + 1;
+    const p = i < chartRows.length ? prev : i % 7 === 0 ? null : rank + ((i % 5) - 2);
+    return {
+      rank,
+      prev: p,
+      move: (!p ? "new" : p > rank ? "up" : p < rank ? "down" : "same") as "up" | "down" | "same" | "new",
+      change: p ? Math.abs(p - rank) : 0,
+      id: String(1000 + i),
+      title,
+      artist,
+      cover: i % 4 === 3 ? null : `/_dev/${"abc"[i % 3]}.jpg`,
+      title_latin,
+      title_ckb: title_ckb || null,
+      artist_latin,
+      artist_ckb,
+    };
+  }),
+};

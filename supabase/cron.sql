@@ -36,3 +36,18 @@ select cron.schedule(
 );
 
 -- To check runs later:  select * from cron.job_run_details order by start_time desc limit 20;
+
+-- The Korea chart in the footer: Circle Chart publishes its weekly chart on Thursdays (Korea time).
+-- Checked once a day at 06:37 UTC; only a new week is stored. Added 30 Oct 2026 with migrate-006-chart.sql.
+select cron.unschedule(jobname) from cron.job where jobname = 'kurean-chart';
+select cron.schedule(
+  'kurean-chart',
+  '37 6 * * *',
+  $$
+  select net.http_get(
+    url := 'https://YOUR_SITE/api/cron/chart',
+    headers := jsonb_build_object('Authorization', 'Bearer YOUR_SECRET'),
+    timeout_milliseconds := 120000
+  );
+  $$
+);

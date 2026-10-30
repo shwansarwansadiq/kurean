@@ -27,7 +27,7 @@ export function parseScoreReason(reason: string): { category: Category; sensitiv
   return { category, sensitive: parts[1] === "sensitive" };
 }
 
-const SCORE_MODEL = process.env.KUREAN_SCORE_MODEL ?? "claude-haiku-5-5";
+export const SCORE_MODEL = process.env.KUREAN_SCORE_MODEL ?? "claude-haiku-5-5";
 const WRITE_MODEL = process.env.KUREAN_WRITE_MODEL ?? "claude-sonnet-5-5";
 
 /** Stories prepared per day (the plan: 5-8). */
@@ -42,7 +42,7 @@ function ai(): Anthropic {
   return (anthropic ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }));
 }
 
-async function callTool<T>(opts: {
+export async function callTool<T>(opts: {
   model: string;
   system: string;
   user: string;

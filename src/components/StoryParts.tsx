@@ -3,6 +3,8 @@ import Link from "next/link";
 import { CATEGORY_META, ku, readingMinutes, type Story } from "@/lib/site";
 import { Bidi } from "./Bidi";
 import { Clocks } from "./Clocks";
+import { KoreaChart } from "./KoreaChart";
+import { latestChart } from "@/lib/chart";
 import { Sun } from "./Logo";
 
 export const storyHref = (s: Pick<Story, "id">) => `/news/${s.id}`;
@@ -74,10 +76,12 @@ export function Tracklist({ stories, start = 1 }: { stories: Story[]; start?: nu
   );
 }
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const chart = await latestChart();
   return (
     <footer className="site-foot">
       <Clocks />
+      <KoreaChart week={chart} />
       <div className="follow">
         <p>هەموو ڕۆژێک هەواڵی کۆری بە کوردی. شوێنمان بکەوە:</p>
         <div className="handles" dir="ltr">
