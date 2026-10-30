@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isRomanized, latinPart, parseChartList, parseChartPage, periodDates } from "../src/lib/chart";
+import { isRomanized, latinName, latinPart, romanize, parseChartList, parseChartPage, periodDates } from "../src/lib/chart";
 import { moveLabel, soraniPeriod } from "../src/components/KoreaChart";
 
 const page = `<script>var nationGbn = "T";
@@ -45,6 +45,13 @@ describe("Circle Chart", () => {
     expect(latinPart("퇴사할게여 (Narr. 기안84)")).toBeNull();
     expect(isRomanized({ title_latin: "퇴사할게여", artist_latin: "SOYEON" })).toBe(false);
     expect(isRomanized({ title_latin: "Toesahalgeyeo", artist_latin: "SOYEON" })).toBe(true);
+  });
+  it("romanizes Korean when nothing else is given", () => {
+    expect(romanize("한로로")).toBe("Hanroro");
+    expect(romanize("퇴사할게여 (Narr. 기안84)")).toBe("Toesahalgeyeo (Narr. Gian84)");
+    expect(latinName("퇴사할게여", "퇴사할게여")).toBe("Toesahalgeyeo");
+    expect(latinName(null, "IVE (아이브)")).toBe("IVE");
+    expect(latinName("SOYEON", "소연 (SOYEON)")).toBe("SOYEON");
   });
   it("writes the week and movement in Sorani", () => {
     expect(periodDates("2026.10.18~2026.10.24")?.from.getUTCDate()).toBe(18);

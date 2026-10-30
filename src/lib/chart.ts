@@ -123,6 +123,34 @@ export async function fetchCircleChart(): Promise<{ year: number; week: number; 
 
 const HANGUL = /[ᄀ-ᇿ㄰-㆏가-힯]/;
 
+const INITIAL = ["g", "kk", "n", "d", "tt", "r", "m", "b", "pp", "s", "ss", "", "j", "jj", "ch", "k", "t", "p", "h"];
+const MEDIAL = ["a", "ae", "ya", "yae", "eo", "e", "yeo", "ye", "o", "wa", "wae", "oe", "yo", "u", "wo", "we", "wi", "yu", "eu", "ui", "i"];
+const FINAL = ["", "k", "k", "k", "n", "n", "n", "t", "l", "k", "m", "l", "l", "l", "p", "l", "m", "p", "p", "t", "t", "ng", "t", "t", "k", "t", "p", "t"];
+
+/** Plain Revised Romanization, syllable by syllable: the backstop when no Latin name is available. */
+export function romanize(text: string): string {
+  let out = "";
+  let word = true;
+  for (const ch of text) {
+    const c = ch.codePointAt(0)!;
+    if (c >= 0xac00 && c <= 0xd7a3) {
+      const i = c - 0xac00;
+      let syl = INITIAL[Math.floor(i / 588)] + MEDIAL[Math.floor((i % 588) / 28)] + FINAL[i % 28];
+      if (word) syl = syl.charAt(0).toUpperCase() + syl.slice(1);
+      out += syl;
+      word = false;
+    } else {
+      out += ch;
+      word = /\s|\(/.test(ch);
+    }
+  }
+  return out;
+}
+
+/** A Latin name: the one given, else the Latin part of the original, else its romanization. */
+export const latinName = (given: string | null | undefined, original: string) =>
+  given && !HANGUL.test(given) ? given : latinPart(original) ?? romanize(original);
+
 /** "소연 (SOYEON)" → "SOYEON"; "IVE (아이브)" → "IVE"; plain Latin stays as it is. Null when only Korean is given. */
 export function latinPart(name: string): string | null {
   if (!HANGUL.test(name)) return name.trim();
@@ -191,7 +219,7 @@ export const isRomanized = (n: { title_latin?: string | null; artist_latin?: str
 type Names = Pick<ChartEntry, "title_latin" | "title_ckb" | "artist_latin" | "artist_ckb">;
 
 async function writeNames(songs: { title: string; artist: string }[]): Promise<Names[]> {
-  const fallback = songs.map((s) => ({ title_latin: latinPart(s.title), title_ckb: null, artist_latin: latinPart(s.artist), artist_ckb: null }));
+  const fallback = songs.map((s) => ({ title_latin: latinName(null, s.title), title_ckb: null, artist_latin: latinName(null, s.artist), artist_ckb: null }));
   if (!songs.length || !process.env.ANTHROPIC_API_KEY) return fallback;
   try {
     const out = await callTool({
@@ -207,9 +235,9 @@ async function writeNames(songs: { title: string; artist: string }[]): Promise<N
       if (!n) return f;
       const clean = (v: string) => v.trim() || null;
       return {
-        title_latin: f.title_latin && !HANGUL.test(songs[i].title) ? f.title_latin : clean(n.title_latin),
+        title_latin: !HANGUL.test(songs[i].title) ? songs[i].title : latinName(clean(n.title_latin), songs[i].title),
         title_ckb: HANGUL.test(songs[i].title) ? clean(n.title_ckb) : null,
-        artist_latin: f.artist_latin ?? clean(n.artist_latin),
+        artist_latin: f.artist_latin ?? latinName(clean(n.artist_latin), songs[i].artist),
         artist_ckb: clean(n.artist_ckb),
       };
     });
@@ -279,10 +307,10 @@ export async function latestChart(): Promise<ChartWeek | null> {
       .select("id, title_latin, title_ckb, artist_latin, artist_ckb")
       .in("id", week.entries.map((e) => e.id));
     const byId = new Map((names ?? []).map((n) => [n.id as string, n as Names]));
-    week.entries = week.entries.map((e) => ({
-      ...e,
-      ...(byId.get(e.id) ?? { title_latin: latinPart(e.title), artist_latin: latinPart(e.artist) }),
-    }));
+    week.entries = week.entries.map((e) => {
+      const n = byId.get(e.id);
+      return { ...e, ...n, title_latin: latinName(n?.title_latin, e.title), artist_latin: latinName(n?.artist_latin, e.artist) };
+    });
     return week;
   } catch {
     return null; // the footer never breaks a page
