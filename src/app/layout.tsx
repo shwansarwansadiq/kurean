@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.KUREAN_SITE_URL ?? "https://kurean.vercel.app"),
+  metadataBase: new URL(process.env.KUREAN_SITE_URL ?? "https://kurean.news"),
   title: "کوریەن · هەواڵی کۆری بە کوردی",
   description: "هەواڵی کەی-پۆپ، دراما، فیلم و کولتووری کۆری بە کوردیی سۆرانی، هەموو ڕۆژێک، لەگەڵ سەرچاوەکانی.",
   openGraph: { siteName: "KUREAN", locale: "ckb_IQ", type: "website" },

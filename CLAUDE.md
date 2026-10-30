@@ -5,7 +5,7 @@ Korea news) for fans aged 15–30 in the Kurdistan Region and the diaspora. Owne
 The system finds news, writes it in Sorani, designs the posts, and waits; Shwan's only job is to
 approve. **Nothing is ever published without his approval.**
 
-- Live site: https://kurean.vercel.app (domain kurean.news is bought, not yet connected)
+- Live site: https://kurean.news (Namecheap BasicDNS: A @ → 216.198.79.1, CNAME www → Vercel; www redirects 308 to the bare domain; kurean.vercel.app still works)
 - Plan doc (decisions, sources, glossary tab): https://claude.ai/artifact/Cbapd6o1PLqdh6iYRNpsGP
 - Logo, post/story/TikTok templates (design canvas): https://claude.ai/artifact/49rPtou3u9Tv8Zfessh7FR
 - Social: display name **KUREAN** on every platform; username/handle **@kurean.news** on Instagram, TikTok and Facebook.

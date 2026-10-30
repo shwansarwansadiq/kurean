@@ -5,7 +5,7 @@
  */
 
 const API = "https://commons.wikimedia.org/w/api.php";
-const UA = "KureanBot/1.0 (+https://kurean.vercel.app; Kurdish K-culture news)";
+const UA = "KureanBot/1.0 (+https://kurean.news; Kurdish K-culture news)";
 
 /** Long side at least this many pixels, short side at least MIN_SHORT: "very high resolution". */
 export const MIN_LONG = 1600;

@@ -49,7 +49,7 @@ claude
 
 ## Useful things to know
 
-- **Deploying:** pushing to `main` deploys to https://kurean.vercel.app automatically.
+- **Deploying:** pushing to `main` deploys to https://kurean.news automatically.
 - **Database:** Supabase project `eizsrdtmftjrbxmoawdl` → SQL editor and Table editor.
 - **Running the jobs by hand:** see "Pipeline" step 6 in `CLAUDE.md`.
 - **Plan doc:** https://claude.ai/artifact/Cbapd6o1PLqdh6iYRNpsGP (Glossary tab = Sorani spellings)

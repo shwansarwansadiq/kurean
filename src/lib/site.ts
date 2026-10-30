@@ -132,5 +132,5 @@ export function bidiRuns(text: string): Run[] {
 }
 
 export function siteUrl(): string {
-  return process.env.KUREAN_SITE_URL ?? "https://kurean.vercel.app";
+  return process.env.KUREAN_SITE_URL ?? "https://kurean.news";
 }

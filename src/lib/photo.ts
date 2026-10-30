@@ -3,7 +3,7 @@ import { findFreePhoto, photoSubjects } from "./commons";
 import { imageSize } from "./imagesize";
 import { bidiRuns } from "./site";
 
-const UA = "KureanBot/1.0 (+https://kurean.vercel.app)";
+const UA = "KureanBot/1.0 (+https://kurean.news)";
 const BUCKET = "story-images";
 const MAX_BYTES = 12 * 1024 * 1024;
 
