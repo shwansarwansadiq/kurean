@@ -139,6 +139,7 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   `components/KoreaChart.tsx`). Daily job `kurean-chart` → `/api/cron/chart` reads Circle Chart's public page and the
   same list request that page makes (KureanBot user agent; any refusal keeps the stored week). New songs get Latin and
   Sorani names once via Haiku (`chart_songs`). Covers are Circle Chart's 70 px thumbnails, linked, not copied.
+  No translated title meanings under the songs (Shwan, 30 Oct): only the Latin title, artist, and artist in Sorani.
   Melon was refused (robots.txt blocks it); Spotify's API no longer serves its Korea playlist to new apps.
 - **Analytics (`/admin/analytics`, from Shwan's spec 30 Oct):** first-party tracker `components/Tracker.tsx` → `/api/t`
   → `analytics_events`; no cookies, no IP stored; visitor = salted daily hash, or a stable random ID after consent

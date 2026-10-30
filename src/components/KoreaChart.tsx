@@ -77,7 +77,6 @@ function Row({ e }: { e: ChartEntry }) {
           <bdi className="lat">{artist(e)}</bdi>
           {e.artist_ckb ? <span className="ckb"> · {e.artist_ckb}</span> : null}
         </span>
-        {e.title_ckb ? <span className="kc-m">{e.title_ckb}</span> : null}
       </span>
     </li>
   );
@@ -112,7 +111,6 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
               <Move e={one} />
             </div>
             <b className="kc-one-t lat" dir="ltr">{title(one)}</b>
-            {one.title_ckb ? <span className="kc-m">{one.title_ckb}</span> : null}
             <figcaption className="kc-one-a">
               <Cover e={one} size={56} />
               <span>

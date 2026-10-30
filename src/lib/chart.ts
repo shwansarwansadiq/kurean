@@ -177,11 +177,10 @@ export const NAMES_TOOL = {
           properties: {
             index: { type: "integer" },
             title_latin: { type: "string", description: "Official English/Latin title if the given title contains one, else Revised Romanization of the Korean title" },
-            title_ckb: { type: "string", description: "What a Korean title means, in natural Sorani Kurdish (Arabic script), under 8 words. Empty string when the title is already English/Latin." },
             artist_latin: { type: "string", description: "The artist's official Latin name (as in the brackets when given), else Revised Romanization" },
             artist_ckb: { type: "string", description: "The artist name spelled in Sorani Kurdish letters, as Kurdish K-pop fans would write it" },
           },
-          required: ["index", "title_latin", "title_ckb", "artist_latin", "artist_ckb"],
+          required: ["index", "title_latin", "artist_latin", "artist_ckb"],
         },
       },
     },
@@ -194,7 +193,6 @@ const NamesSchema = z.object({
     z.object({
       index: z.number().int(),
       title_latin: z.string(),
-      title_ckb: z.string(),
       artist_latin: z.string(),
       artist_ckb: z.string(),
     }),
@@ -206,8 +204,6 @@ For each song you get the title and artist exactly as the Korean chart writes th
 - Latin names: use the official English/Latin name when the text contains one (often in brackets). Otherwise use
   Revised Romanization. Never invent an English title that is not in the text; credits such as "(Feat. X)" or
   "(Narr. X)" stay, romanized.
-- title_ckb: only for Korean titles, a short natural Sorani rendering of what the title means. Leave it empty for
-  English titles and for titles that are only a name. If you are not sure what it means, leave it empty.
 - artist_ckb: the artist name in Sorani letters by sound (e.g. IVE → ئایڤ, aespa → ئێسپا, IU → ئایو).
 - title_latin and artist_latin must contain no Korean letters at all.
 Use only the text you are given; add nothing else.`;
@@ -236,7 +232,7 @@ async function writeNames(songs: { title: string; artist: string }[]): Promise<N
       const clean = (v: string) => v.trim() || null;
       return {
         title_latin: !HANGUL.test(songs[i].title) ? songs[i].title : latinName(clean(n.title_latin), songs[i].title),
-        title_ckb: HANGUL.test(songs[i].title) ? clean(n.title_ckb) : null,
+        title_ckb: null, // Shwan, 30 Oct: no translated title meanings in the chart
         artist_latin: f.artist_latin ?? latinName(clean(n.artist_latin), songs[i].artist),
         artist_ckb: clean(n.artist_ckb),
       };
