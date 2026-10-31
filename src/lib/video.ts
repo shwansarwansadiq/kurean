@@ -139,7 +139,7 @@ export async function kickVideos(): Promise<boolean> {
 
 /** Same as kickVideos, but says why it did not work (for the cron route's report). */
 export async function dispatchVideos(): Promise<{ ok: boolean; status?: number; reason?: string }> {
-  const token = process.env.GITHUB_DISPATCH_TOKEN;
+  const token = process.env.GITHUB_DISPATCH_TOKEN?.trim(); // a pasted value can carry spaces or a line break
   if (!token) return { ok: false, reason: "GITHUB_DISPATCH_TOKEN is not set" };
   try {
     const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/render-videos.yml/dispatches`, {
