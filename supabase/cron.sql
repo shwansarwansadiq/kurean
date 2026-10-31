@@ -79,3 +79,17 @@ select cron.schedule(
   );
   $$
 );
+
+-- Videos: every 15 minutes, start the GitHub video workflow if any video is waiting (GitHub's schedule is irregular).
+select cron.unschedule(jobname) from cron.job where jobname = 'kurean-videos';
+select cron.schedule(
+  'kurean-videos',
+  '3,18,33,48 * * * *',
+  $$
+  select net.http_get(
+    url := 'https://YOUR_SITE/api/cron/videos',
+    headers := jsonb_build_object('Authorization', 'Bearer YOUR_SECRET'),
+    timeout_milliseconds := 30000
+  );
+  $$
+);

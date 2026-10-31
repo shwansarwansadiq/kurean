@@ -134,8 +134,13 @@ export async function videoDone(id: number, hash: string, path: string, target: 
  * Without it, videos still come from the schedule. Never throws: a video is never worth failing a publish for.
  */
 export async function kickVideos(): Promise<boolean> {
+  return (await dispatchVideos()).ok;
+}
+
+/** Same as kickVideos, but says why it did not work (for the cron route's report). */
+export async function dispatchVideos(): Promise<{ ok: boolean; status?: number; reason?: string }> {
   const token = process.env.GITHUB_DISPATCH_TOKEN;
-  if (!token) return false;
+  if (!token) return { ok: false, reason: "GITHUB_DISPATCH_TOKEN is not set" };
   try {
     const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/render-videos.yml/dispatches`, {
       method: "POST",
@@ -143,8 +148,23 @@ export async function kickVideos(): Promise<boolean> {
       body: JSON.stringify({ ref: "main" }),
       signal: AbortSignal.timeout(10_000),
     });
-    return res.ok;
-  } catch {
-    return false;
+    return res.ok ? { ok: true, status: res.status } : { ok: false, status: res.status, reason: (await res.text()).slice(0, 200) };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : String(e) };
   }
+}
+
+/** Is any video waiting? (Read-only: no upload addresses are made.) */
+export async function videosWaiting(): Promise<number> {
+  const since = new Date(Date.now() - 4 * 86_400_000).toISOString();
+  const { data } = await db()
+    .from("stories")
+    .select("id, category, card_headline, key_points, image_url, kind, chart_week, chart_top, video_hash")
+    .in("status", ["pending", "approved", "published"])
+    .or(`created_at.gte.${since},edited_at.gte.${since}`)
+    .limit(60);
+  let n = ((data ?? []) as Row[]).filter((r) => videoJob(r) && videoJob(r)!.hash !== r.video_hash).length;
+  const { data: sc } = await db().from("scenery").select("id, kind, url, place_en, place_ckb, photographer, source, music, video_hash").eq("status", "approved").limit(100);
+  n += ((sc ?? []) as SceneryRow[]).filter((r) => sceneryJob(r).hash !== r.video_hash).length;
+  return n;
 }

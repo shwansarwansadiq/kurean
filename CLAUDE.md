@@ -213,7 +213,8 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   Edit page previews the video with download + "make again"; /admin/published has Edit + download (Shwan, 31 Oct).
   Edited stories (`edited_at` within 4 days) get a new video. Optional `GITHUB_DISPATCH_TOKEN` (fine-grained, this repo
   only, Actions read/write) lets the site start the workflow at once (`kickVideos()`: new stories, saves, remakes,
-  scenery approvals). Not yet: posting Reels automatically, TikTok Content Posting API. Remotion's licence is
+  scenery approvals), and Supabase job `kurean-videos` (every 15 min) → `/api/cron/videos` starts it whenever a video
+  is waiting — the reliable trigger, since GitHub's schedule ran only every few hours. Not yet: posting Reels automatically, TikTok Content Posting API. Remotion's licence is
   free for individuals and companies of up to 3 people. Local: `cd video && npx remotion studio src/index.ts`.
   `Promo` (29 s) is the site advert: mark, promise, four categories, credited sources, clocks, top 100 + player,
   socials, end card. Render: `npx remotion render src/index.ts Promo out/kurean-promo.mp4`.
