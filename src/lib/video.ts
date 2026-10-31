@@ -168,3 +168,15 @@ export async function videosWaiting(): Promise<number> {
   n += ((sc ?? []) as SceneryRow[]).filter((r) => sceneryJob(r).hash !== r.video_hash).length;
   return n;
 }
+
+/** Is the story's video made and up to date with what the story shows now? Returns its address, or null. */
+export async function readyVideo(id: number): Promise<string | null> {
+  const { data } = await db()
+    .from("stories")
+    .select("id, category, card_headline, key_points, image_url, kind, chart_week, chart_top, video_hash, video_url")
+    .eq("id", id)
+    .maybeSingle();
+  const r = data as (Row & { video_url: string | null }) | null;
+  if (!r?.video_url) return null;
+  return videoJob(r)?.hash === r.video_hash ? r.video_url : null;
+}

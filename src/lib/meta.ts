@@ -87,3 +87,24 @@ export async function facebookVideoStory(t: MetaTargets, videoUrl: string): Prom
   );
   return done.post_id ?? start.video_id;
 }
+
+/** A 9:16 MP4 as an Instagram Reel, also shown in the profile grid. */
+export const instagramReel = (t: MetaTargets, videoUrl: string, caption: string) =>
+  igPublish(t, { video_url: videoUrl, media_type: "REELS", caption, share_to_feed: "true" }, 40);
+
+/** A 9:16 MP4 as a Facebook Reel on the kurean Page: start, let Facebook fetch the file, then publish. */
+export async function facebookReel(t: MetaTargets, videoUrl: string, description: string): Promise<string> {
+  const start = await graph<{ video_id: string; upload_url: string }>(`${t.pageId}/video_reels`, { upload_phase: "start", access_token: t.pageToken }, "POST");
+  const up = await fetch(start.upload_url, {
+    method: "POST",
+    headers: { Authorization: `OAuth ${t.pageToken}`, file_url: videoUrl },
+    signal: AbortSignal.timeout(120_000),
+  });
+  if (!up.ok) throw new MetaError(`Facebook could not fetch the video (${up.status})`);
+  const done = await graph<{ success?: boolean; post_id?: string }>(
+    `${t.pageId}/video_reels`,
+    { upload_phase: "finish", video_id: start.video_id, video_state: "PUBLISHED", description, access_token: t.pageToken },
+    "POST",
+  );
+  return done.post_id ?? start.video_id;
+}

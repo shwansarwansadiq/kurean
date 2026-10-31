@@ -119,7 +119,11 @@ export async function retrySocial(form: FormData) {
   await requireAdmin();
   const id = idOf(form);
   const platforms = String(form.get("platforms") ?? "").split(",").filter(Boolean);
-  await publishSocial(id, platforms);
+  const kinds = String(form.get("kinds") ?? "feed,story").split(",");
+  // A failed Reel is retried by the 5-minute job; the cards that failed are posted again now.
+  if (kinds.includes("reel")) await db().from("stories").update({ reel_status: "waiting", reel_story: false }).eq("id", id);
+  const cards = kinds.filter((k): k is "feed" | "story" => k === "feed" || k === "story");
+  if (cards.length) await publishSocial(id, platforms, cards);
   revalidatePath("/admin/published");
 }
 

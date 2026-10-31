@@ -41,7 +41,7 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
   `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids),
   `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`), `migrate-009-video.sql` (video, tiktok_done),
   `migrate-010-schedule.sql` (`scheduled_at`), `migrate-011-scenery.sql` (`scenery`, `social_queue`),
-  `migrate-012-scenery-source.sql` (`scenery.source`). Env also: `META_TOKEN`.
+  `migrate-012-scenery-source.sql` (`scenery.source`), `migrate-013-reels.sql` (`reel_status`, `reel_story`, `reel_posted_at`). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -214,7 +214,7 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   Edited stories (`edited_at` within 4 days) get a new video. Optional `GITHUB_DISPATCH_TOKEN` (fine-grained, this repo
   only, Actions read/write) lets the site start the workflow at once (`kickVideos()`: new stories, saves, remakes,
   scenery approvals), and Supabase job `kurean-videos` (every 15 min) → `/api/cron/videos` starts it whenever a video
-  is waiting — the reliable trigger, since GitHub's schedule ran only every few hours. Not yet: posting Reels automatically, TikTok Content Posting API. Remotion's licence is
+  is waiting — the reliable trigger, since GitHub's schedule ran only every few hours. **Reels (Shwan, 31 Oct):** publishing sets `reel_status = 'waiting'`; the 5-min publish job (`postDueReels` in `lib/publish.ts`) posts the motion video as an Instagram Reel (shared to the grid) and a Facebook Reel with the story's captions (`instagramReel`, `facebookReel` in `meta.ts`) once the video matches the story. If the video is already made at publish time, it is also the IG/FB story instead of the still card (`reel_story`). Not ready 6 h after publishing → `gave-up`. Results show as "reel" in /admin/published, with retry. Not yet: TikTok Content Posting API. Remotion's licence is
   free for individuals and companies of up to 3 people. Local: `cd video && npx remotion studio src/index.ts`.
   `Promo` (29 s) is the site advert: mark, promise, four categories, credited sources, clocks, top 100 + player,
   socials, end card. Render: `npx remotion render src/index.ts Promo out/kurean-promo.mp4`.

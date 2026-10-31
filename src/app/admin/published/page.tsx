@@ -49,6 +49,7 @@ export default async function Published() {
                       name="platforms"
                       value={[...new Set(posts.get(s.id)!.filter((p) => !p.ok).map((p) => p.platform))].join(",")}
                     />
+                    <input type="hidden" name="kinds" value={[...new Set(posts.get(s.id)!.filter((p) => !p.ok).map((p) => p.kind))].join(",")} />
                     <Submit className="btn small" busy="دەنێردرێتەوە…">دووبارە ناردنەوە بۆ سۆشیاڵ میدیا</Submit>
                   </form>
                 </>
