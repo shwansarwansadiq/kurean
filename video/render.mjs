@@ -15,7 +15,8 @@ async function githubToken() {
   return (await res.json()).value;
 }
 
-const auth = { Authorization: `Bearer ${await githubToken()}` };
+// GitHub's token lives only a few minutes, so a fresh one is fetched for every request (a long run outlives it).
+const authHeader = async () => ({ Authorization: `Bearer ${await githubToken()}` });
 const started = Date.now();
 const LIMIT_MS = 22 * 60_000; // the job has 30 minutes; leave room to finish the last video
 let serveUrl = null;
@@ -24,8 +25,11 @@ const failed = new Set();
 
 // Keep asking until every waiting video is made: GitHub runs this schedule irregularly, so each run catches up fully.
 while (Date.now() - started < LIMIT_MS) {
-  const res = await fetch(`${SITE}/api/video/jobs`, { headers: auth });
-  if (!res.ok) throw new Error(`jobs: HTTP ${res.status}`);
+  const res = await fetch(`${SITE}/api/video/jobs`, { headers: await authHeader() });
+  if (!res.ok) {
+    console.error(`jobs: HTTP ${res.status}; stopping, the next run carries on`);
+    break;
+  }
   const jobs = (await res.json()).jobs.filter((j) => !failed.has(`${j.target ?? "story"}-${j.id}-${j.hash}`));
   if (!jobs.length) break;
   console.log(`${jobs.length} video(s) in this batch`);
@@ -40,7 +44,7 @@ while (Date.now() - started < LIMIT_MS) {
       await renderMedia({ composition, serveUrl, codec: "h264", outputLocation: out, inputProps: job.props, crf: 20, x264Preset: "medium" });
       const put = await fetch(job.upload.signedUrl, { method: "PUT", headers: { "Content-Type": "video/mp4", "x-upsert": "true" }, body: await readFile(out) });
       if (!put.ok) throw new Error(`upload: HTTP ${put.status} ${await put.text()}`);
-      const done = await fetch(`${SITE}/api/video/done`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify({ id: job.id, hash: job.hash, path: job.upload.path, target: job.target ?? "story" }) });
+      const done = await fetch(`${SITE}/api/video/done`, { method: "POST", headers: { ...(await authHeader()), "Content-Type": "application/json" }, body: JSON.stringify({ id: job.id, hash: job.hash, path: job.upload.path, target: job.target ?? "story" }) });
       if (!done.ok) throw new Error(`not recorded (HTTP ${done.status})`);
       made++;
       console.log(`${key}: done in ${Math.round((Date.now() - t0) / 1000)} s`);
