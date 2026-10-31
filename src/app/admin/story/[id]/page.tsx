@@ -6,7 +6,7 @@ import { SocialCard } from "@/components/admin/SocialCards";
 import { Submit } from "@/components/admin/Submit";
 import { adminStory } from "@/lib/admin-data";
 import { CATEGORY_KEYS, CATEGORY_META, ku } from "@/lib/site";
-import { publishStory, saveStory } from "../../actions";
+import { publishStory, remakeVideo, saveStory } from "../../actions";
 
 export default async function EditStory({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string }> }) {
   const story = await adminStory(Number((await params).id));
@@ -33,6 +33,17 @@ export default async function EditStory({ params, searchParams }: { params: Prom
             <div className="tt-video tt-wait vid-prev">ڤیدیۆکە ئامادە دەکرێت (نزیکەی ١٥ خولەک)</div>
           )}
           <figcaption>ڤیدیۆ · تیکتۆک و ڕیڵز</figcaption>
+          <div className="vid-acts">
+            {story.video_url ? (
+              <a className="btn small" href={`${story.video_url}?download=kurean-${story.id}.mp4`}>
+                دابەزاندنی ڤیدیۆ
+              </a>
+            ) : null}
+            <form action={remakeVideo}>
+              <input type="hidden" name="id" value={story.id} />
+              <Submit className="btn small ghost" busy="…">{story.video_url ? "دووبارە دروستی بکەوە" : "ئێستا دروستی بکە"}</Submit>
+            </form>
+          </div>
         </figure>
       </section>
       <PhotoPanel story={story} />

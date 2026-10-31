@@ -10,6 +10,7 @@ import { collectPhotoOptions, refreshPhoto, regenerate } from "@/lib/writer";
 import { download, looksLikeAgencyPhoto, store } from "@/lib/photo";
 import { publishSocial } from "@/lib/social";
 import { publishApproved } from "@/lib/publish";
+import { kickVideos } from "@/lib/video";
 import { fromHawlerInput, nextFreeSlot, spreadEvenly } from "@/lib/schedule";
 import { PLATFORMS } from "@/lib/admin-data";
 
@@ -172,6 +173,7 @@ export async function saveStory(form: FormData) {
   if (error) throw error;
   refreshSite(id);
   revalidatePath("/admin");
+  await kickVideos(); // the edit changes what the video shows: make it again now
   redirect(`/admin/story/${id}?saved=1`);
 }
 
@@ -317,6 +319,7 @@ export async function setScenery(form: FormData) {
   await requireAdmin();
   const status = form.get("status") === "approved" ? "approved" : "rejected";
   await db().from("scenery").update({ status }).eq("id", idOf(form));
+  if (status === "approved") await kickVideos();
   revalidatePath("/admin/scenery");
 }
 
@@ -326,4 +329,17 @@ export async function searchScenery() {
   const { refreshScenery } = await import("@/lib/scenery");
   await refreshScenery(12);
   revalidatePath("/admin/scenery");
+}
+
+/** Make this story's video again (and start the video job now when the site can). */
+export async function remakeVideo(form: FormData) {
+  await requireAdmin();
+  const id = idOf(form);
+  await db().from("stories").update({ video_hash: null }).eq("id", id);
+  // A video older than the 4-day window is brought back into it by marking the story as just edited.
+  await db().from("stories").update({ edited_at: new Date().toISOString() }).eq("id", id).lt("created_at", new Date(Date.now() - 3 * 86_400_000).toISOString());
+  await kickVideos();
+  revalidatePath(`/admin/story/${id}`);
+  revalidatePath("/admin/published");
+  revalidatePath("/admin/tiktok");
 }

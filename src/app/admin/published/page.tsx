@@ -22,6 +22,14 @@ export default async function Published() {
               <small>
                 {soraniDate(s.published_at ?? s.created_at)} · <bdi dir="ltr">kurean.news/n/{s.id}</bdi>
               </small>
+              <div className="pub-acts">
+                <Link href={`/admin/story/${s.id}`} className="btn small">دەستکاری</Link>
+                {s.video_url ? (
+                  <a className="btn small" href={`${s.video_url}?download=kurean-${s.id}.mp4`}>دابەزاندنی ڤیدیۆ</a>
+                ) : (
+                  <span className="pub-wait">ڤیدیۆکە ئامادە دەکرێت…</span>
+                )}
+              </div>
               {posts.get(s.id)?.length ? (
                 <div className="social" dir="ltr">
                   {posts.get(s.id)!.map((p) => (

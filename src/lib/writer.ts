@@ -271,6 +271,7 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
       failed++;
     }
   }
+  if (written) await import("./video").then((v) => v.kickVideos()).catch(() => false);
   return { written, failed };
 }
 

@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   // Ship Chromium's compressed binary only with the functions that render cards.
   outputFileTracingIncludes: {
     "/api/meta/check": ["./node_modules/@sparticuz/chromium/bin/**"],
+    // Scheduled stories publish from here, so it needs the renderer too.
+    "/api/cron/publish": ["./node_modules/@sparticuz/chromium/bin/**"],
     "/admin": ["./node_modules/@sparticuz/chromium/bin/**"],
     "/admin/**": ["./node_modules/@sparticuz/chromium/bin/**"],
   },

@@ -4,7 +4,8 @@ name: render-videos
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    # Off the busy top of the hour (GitHub delays or drops scheduled runs at :00 under load).
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
 
 permissions:

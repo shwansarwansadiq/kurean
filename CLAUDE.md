@@ -203,13 +203,17 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
 
 - **Motion videos (Shwan, 30 Oct):** every recent pending/published story gets a 9:16 MP4 (`video/`, Remotion 4):
   `News` (11 s: photo zoom, headline word by word, 3 key points, logo end card) and `Chart` (18 s: 10 → 1 countdown,
-  #1 on berry). GitHub Actions `render-videos.yml` (every 15 min, free on this public repo) asks `/api/video/jobs`,
+  #1 on berry). GitHub Actions `render-videos.yml` (scheduled at :07/:22/:37/:52 — GitHub runs schedules irregularly — so each run
+  loops until no jobs are left, ≤22 min; free on this public repo) asks `/api/video/jobs`,
   renders, uploads to `story-images/video/`, reports to `/api/video/done`. Auth = GitHub OIDC token checked in
   `lib/video.ts` (repo + main + workflow), no shared secret. A video is remade when what it shows changes
   (`video_hash`; bump `DESIGN_VERSION` after design changes). All text stays inside TikTok's safe area
   (`SAFE` in `video/src/brand.tsx`: top 230, right 180, bottom 470, left 64; Shwan, 30 Oct). /admin/tiktok: download, copy caption, mark posted
   (`tiktok_done`); Shwan posts from his phone and adds a trending sound in TikTok (never K-pop audio in the file).
-  Edit page previews the video. Not yet: posting Reels automatically, TikTok Content Posting API. Remotion's licence is
+  Edit page previews the video with download + "make again"; /admin/published has Edit + download (Shwan, 31 Oct).
+  Edited stories (`edited_at` within 4 days) get a new video. Optional `GITHUB_DISPATCH_TOKEN` (fine-grained, this repo
+  only, Actions read/write) lets the site start the workflow at once (`kickVideos()`: new stories, saves, remakes,
+  scenery approvals). Not yet: posting Reels automatically, TikTok Content Posting API. Remotion's licence is
   free for individuals and companies of up to 3 people. Local: `cd video && npx remotion studio src/index.ts`.
   `Promo` (29 s) is the site advert: mark, promise, four categories, credited sources, clocks, top 100 + player,
   socials, end card. Render: `npx remotion render src/index.ts Promo out/kurean-promo.mp4`.

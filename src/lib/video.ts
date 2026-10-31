@@ -85,7 +85,8 @@ export async function videoJobs(limit = 3): Promise<(VideoJob & { upload: { path
     .from("stories")
     .select("id, category, card_headline, key_points, image_url, kind, chart_week, chart_top, video_hash")
     .in("status", ["pending", "approved", "published"])
-    .gte("created_at", since)
+    // Written in the last 4 days, or edited since (a published story Shwan changes gets a new video).
+    .or(`created_at.gte.${since},edited_at.gte.${since}`)
     .order("created_at", { ascending: false })
     .limit(40);
   if (error) throw error;
@@ -125,4 +126,25 @@ export async function videoDone(id: number, hash: string, path: string, target: 
       ? await db().from("scenery").update({ video_url: url, video_hash: hash }).eq("id", id)
       : await db().from("stories").update({ video_url: url, video_hash: hash, video_made_at: new Date().toISOString() }).eq("id", id);
   return !error;
+}
+
+/**
+ * Starts the video workflow now instead of waiting for GitHub's schedule (which GitHub runs irregularly).
+ * Needs GITHUB_DISPATCH_TOKEN: a fine-grained token for this repository only, with "Actions: read and write".
+ * Without it, videos still come from the schedule. Never throws: a video is never worth failing a publish for.
+ */
+export async function kickVideos(): Promise<boolean> {
+  const token = process.env.GITHUB_DISPATCH_TOKEN;
+  if (!token) return false;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/render-videos.yml/dispatches`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+      body: JSON.stringify({ ref: "main" }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

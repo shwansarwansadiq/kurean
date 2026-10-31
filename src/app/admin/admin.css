@@ -245,3 +245,6 @@
 .sc-item small a { text-decoration: underline; }
 .sc-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .sc-acts .btn.pub { min-height: 38px; font-size: 13px; }
+.vid-acts, .pub-acts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
+.pub-acts { justify-content: flex-start; }
+.pub-wait { font-size: 12px; color: var(--ink-2); align-self: center; }
