@@ -1,9 +1,9 @@
-/* eslint-disable @next/next/no-img-element -- Pixabay/Pexels previews */
 import { AdminShell } from "@/components/admin/AdminShell";
+import { SceneryPreview } from "@/components/admin/SceneryPreview";
 import { Submit } from "@/components/admin/Submit";
 import { db } from "@/lib/db";
 import { ku } from "@/lib/site";
-import { REPEAT_DAYS } from "@/lib/scenery";
+import { FEED_HOUR, REPEAT_DAYS } from "@/lib/scenery";
 import { searchScenery, setScenery } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -23,10 +23,20 @@ type Item = {
   last_posted_at: string | null;
 };
 
+/** The finished clip once it is made; before that, a preview of it (place card, credit, mark and music). */
 function Preview({ s }: { s: Item }) {
   if (s.video_url) return <video className="sc-prev" src={s.video_url} controls playsInline preload="metadata" />;
-  if (s.kind === "video") return <video className="sc-prev" src={s.url} muted playsInline preload="metadata" controls />;
-  return <img className="sc-prev" src={`${s.url}?auto=compress&w=360`} alt={s.place_en} loading="lazy" />;
+  return (
+    <SceneryPreview
+      kind={s.kind}
+      src={s.url}
+      placeCkb={s.place_ckb}
+      placeEn={s.place_en}
+      photographer={s.photographer}
+      source={s.source === "pixabay" ? "Pixabay" : "Pexels"}
+      music={s.music ?? "han-river"}
+    />
+  );
 }
 
 /** Korea's nature and landmarks between the news: approve the week's candidates; approved ones post themselves. */
@@ -48,7 +58,7 @@ export default async function SceneryPage() {
       <div className="sched-top">
         <p className="adm-note">
           لە نێوان هەواڵەکاندا لە ستۆریی ئینستاگرام و فەیسبووک: ٢٠ خولەک دوای هەر هەواڵێک، یەک دیمەنی پەسەندکراو (وێنە یان ڤیدیۆ) لەگەڵ
-          مۆسیقای خۆمان بڵاودەبێتەوە. هەمان دیمەن تا {ku(REPEAT_DAYS)} ڕۆژ دووبارە نابێتەوە. هەموو هەفتەیەک دیمەنی نوێ دێت.
+          مۆسیقای خۆمان بڵاودەبێتەوە. هەروەها ڕۆژانە یەک دیمەن لە کاتژمێر {ku(FEED_HOUR)}:٠٠ دەچێتە فیدی ئینستاگرام و فەیسبووک. هەمان دیمەن تا {ku(REPEAT_DAYS)} ڕۆژ دووبارە نابێتەوە. هەموو هەفتەیەک دیمەنی نوێ دێت. بۆ بینینی دیمەنێک لەگەڵ مۆسیقاکەی، دەستی لێبدە.
         </p>
         {hasKey ? (
           <form action={searchScenery}>

@@ -51,7 +51,7 @@ export async function facebookStory(t: MetaTargets, imageUrl: string): Promise<s
   return r.post_id ?? r.id ?? photo.id;
 }
 
-async function igPublish(t: MetaTargets, params: Record<string, string>, tries = 20): Promise<string> {
+async function igPublish(t: MetaTargets, params: Record<string, string>, tries = 20, waitMs = 3000): Promise<string> {
   if (!t.igId) throw new MetaError("No Instagram account is linked to the kurean Page");
   const c = await graph<{ id: string }>(`${t.igId}/media`, { ...params, access_token: t.pageToken }, "POST");
   // Instagram fetches and processes the image; wait until the container is ready.
@@ -59,7 +59,7 @@ async function igPublish(t: MetaTargets, params: Record<string, string>, tries =
     const s = await graph<{ status_code?: string }>(c.id, { fields: "status_code", access_token: t.pageToken });
     if (s.status_code === "FINISHED") break;
     if (s.status_code === "ERROR" || s.status_code === "EXPIRED") throw new MetaError(`Instagram could not process the file (${s.status_code})`);
-    await new Promise((r) => setTimeout(r, 3000));
+    await new Promise((r) => setTimeout(r, waitMs));
   }
   const p = await graph<{ id: string }>(`${t.igId}/media_publish`, { creation_id: c.id, access_token: t.pageToken }, "POST");
   return p.id;
@@ -69,7 +69,7 @@ export const instagramFeed = (t: MetaTargets, imageUrl: string, caption: string)
 export const instagramStory = (t: MetaTargets, imageUrl: string) => igPublish(t, { image_url: imageUrl, media_type: "STORIES" });
 
 /** A 9:16 MP4 (≤60 s, H.264 + AAC) as an Instagram story. Video takes longer to process, so it waits up to ~2 minutes. */
-export const instagramVideoStory = (t: MetaTargets, videoUrl: string) => igPublish(t, { video_url: videoUrl, media_type: "STORIES" }, 40);
+export const instagramVideoStory = (t: MetaTargets, videoUrl: string) => igPublish(t, { video_url: videoUrl, media_type: "STORIES" }, 24, 6000);
 
 /** A 9:16 MP4 as a Facebook Page story: start an upload, let Facebook fetch the file, then finish. */
 export async function facebookVideoStory(t: MetaTargets, videoUrl: string): Promise<string> {
@@ -88,9 +88,9 @@ export async function facebookVideoStory(t: MetaTargets, videoUrl: string): Prom
   return done.post_id ?? start.video_id;
 }
 
-/** A 9:16 MP4 as an Instagram Reel, also shown in the profile grid. */
+/** A 9:16 MP4 as an Instagram Reel, also shown in the profile grid (the daily scenery feed post). */
 export const instagramReel = (t: MetaTargets, videoUrl: string, caption: string) =>
-  igPublish(t, { video_url: videoUrl, media_type: "REELS", caption, share_to_feed: "true" }, 40);
+  igPublish(t, { video_url: videoUrl, media_type: "REELS", caption, share_to_feed: "true" }, 24, 6000);
 
 /** A 9:16 MP4 as a Facebook Reel on the kurean Page: start, let Facebook fetch the file, then publish. */
 export async function facebookReel(t: MetaTargets, videoUrl: string, description: string): Promise<string> {

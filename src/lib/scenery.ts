@@ -12,7 +12,8 @@
  * no mass downloads, never used to train models.
  */
 import { db } from "./db";
-import { facebookVideoStory, instagramVideoStory, metaTargets } from "./meta";
+import { facebookReel, facebookVideoStory, instagramReel, instagramVideoStory, metaTargets } from "./meta";
+import { HAWLER_OFFSET_MS, hawlerMidnight } from "./schedule";
 import { MUSIC, PLACES, type Place } from "./places";
 
 const API = "https://api.pexels.com";
@@ -249,4 +250,66 @@ export async function postDueScenery(now = new Date()): Promise<number> {
     await db().from("social_queue").update({ result: results.join(" · ").slice(0, 900) }).eq("id", q.id);
   }
   return posted;
+}
+
+/** The hour (Hawler time) of the daily scenery feed post (Shwan, 2 Nov: once a day). */
+export const FEED_HOUR = Number(process.env.KUREAN_SCENERY_FEED_HOUR ?? 13);
+
+type FeedItem = { id: number; kind: string; place_ckb: string; place_en: string; photographer: string; source: string | null; video_url: string };
+
+export function feedCaptions(s: FeedItem) {
+  const credit = `${s.kind === "video" ? "🎥 Video" : "📷 Photo"}: ${s.photographer} · ${s.source === "pixabay" ? "Pixabay" : "Pexels"}`;
+  const body = `${s.place_ckb} 📍\n${s.place_en}\n\nپشوویەک لە نێوان هەواڵەکاندا: دیمەنێکی کۆریا لەگەڵ مۆسیقای کوریەن.`;
+  const tags = "#کوریەن #کۆریا #Korea #Kurean";
+  return {
+    instagram: `${body}\nهەواڵی ڕۆژانەی کۆریا لە kurean.news\n\n${credit}\n\n${tags}`,
+    facebook: `${body}\nهەواڵی ڕۆژانەی کۆریا: https://kurean.news\n\n${credit}\n\n${tags}`,
+  };
+}
+
+/**
+ * The publish job's daily pass: from FEED_HOUR (Hawler), one approved, ready scenery clip goes to the Instagram and
+ * Facebook feed as a Reel, once per Hawler day. The clip least recently on the feed goes first (60 days between repeats).
+ */
+export async function postDailySceneryFeed(now = new Date()): Promise<number | null> {
+  const midnight = hawlerMidnight(now);
+  if (now.getTime() < midnight.getTime() + FEED_HOUR * 3600_000) return null;
+  const day = new Date(midnight.getTime() + HAWLER_OFFSET_MS).toISOString().slice(0, 10);
+  const { data: done } = await db().from("scenery_feed").select("day").eq("day", day).maybeSingle();
+  if (done) return null;
+  const cutoff = new Date(now.getTime() - REPEAT_DAYS * 86_400_000).toISOString();
+  const { data } = await db()
+    .from("scenery")
+    .select("id, kind, place_ckb, place_en, photographer, source, video_url")
+    .eq("status", "approved")
+    .not("video_url", "is", null)
+    .or(`feed_posted_at.is.null,feed_posted_at.lt.${cutoff}`)
+    .order("feed_posted_at", { ascending: true, nullsFirst: true })
+    .order("created_at", { ascending: true })
+    .limit(1);
+  const pick = (data ?? [])[0] as FeedItem | undefined;
+  if (!pick) return null;
+  // Claim the day first, so two runs never post twice.
+  const { error: claimError } = await db().from("scenery_feed").insert({ day, scenery_id: pick.id, result: "posting" });
+  if (claimError) return null;
+  const cap = feedCaptions(pick);
+  const results: string[] = [];
+  try {
+    const t = await metaTargets();
+    for (const [p, post] of [
+      ["instagram", () => instagramReel(t, pick.video_url, cap.instagram)],
+      ["facebook", () => facebookReel(t, pick.video_url, cap.facebook)],
+    ] as const) {
+      try {
+        results.push(`${p}: ok ${await post()}`);
+      } catch (e) {
+        results.push(`${p}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  } catch (e) {
+    results.push(e instanceof Error ? e.message : String(e));
+  }
+  await db().from("scenery").update({ feed_posted_at: new Date().toISOString() }).eq("id", pick.id);
+  await db().from("scenery_feed").update({ result: results.join(" · ").slice(0, 900) }).eq("day", day);
+  return pick.id;
 }

@@ -237,7 +237,7 @@
 
 /* Scenery library */
 .sc-h { font-size: 16px; font-weight: 800; margin: 18px 0 8px; }
-.sc-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.sc-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
 .sc-item { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 8px; display: grid; gap: 6px; align-content: start; }
 .sc-prev { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 10px; background: var(--plum); }
 .sc-item b { font-size: 13.5px; line-height: 1.6; }
@@ -248,3 +248,29 @@
 .vid-acts, .pub-acts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
 .pub-acts { justify-content: flex-start; }
 .pub-wait { font-size: 12px; color: var(--ink-2); align-self: center; }
+
+/* Scenery preview: the finished clip's layout drawn over the source (sizes follow video/src/Scenery.tsx at 1080 wide). */
+.scp { position: relative; display: block; width: 100%; aspect-ratio: 9 / 16; padding: 0; border: 0; border-radius: 10px; overflow: hidden;
+  background: var(--plum); color: #fff; cursor: pointer; container-type: inline-size; text-align: start; font: inherit; }
+.scp:focus-visible { outline: 3px solid var(--berry); outline-offset: 2px; }
+.scp-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.scp-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(42,30,59,.5) 0%, rgba(42,30,59,0) 22%, rgba(42,30,59,0) 50%, rgba(42,30,59,.72) 100%); }
+.scp-top { position: absolute; top: 12%; right: 5.9cqw; display: flex; align-items: center; gap: .6cqw; }
+.scp-top .mark { width: 7.8cqw; height: 7.8cqw; }
+.scp-word { font: 800 5.9cqw/1 var(--word); letter-spacing: -0.02em; color: #fff; }
+.scp-word span { color: var(--berry); }
+.scp-bottom { position: absolute; bottom: 24.5%; left: 5.9cqw; right: 16.7cqw; display: flex; flex-direction: column; align-items: flex-start; gap: 1.7cqw; direction: rtl; }
+.scp-card { display: flex; align-items: center; gap: 1.7cqw; background: rgba(42,30,59,.62); border: max(1px, .19cqw) solid rgba(255,255,255,.22);
+  border-radius: 4cqw; padding: 2.4cqw 3.1cqw 2.8cqw; }
+.scp-pin { width: 6.1cqw; height: 6.1cqw; flex: none; }
+.scp-names { display: grid; }
+.scp-names b { font: 900 5cqw/1.4 var(--sorani); text-wrap: balance; }
+.scp-names span { font: 600 2.96cqw/1.3 var(--latin); color: rgba(255,255,255,.8); text-align: right; }
+.scp-credit { font: 600 2.6cqw/1 var(--latin); color: rgba(255,255,255,.88); text-shadow: 0 1px 6px rgba(0,0,0,.5); }
+.scp-play { position: absolute; left: 6px; bottom: 6px; display: flex; align-items: center; gap: 5px; padding: 5px 9px 5px 6px; border-radius: 999px;
+  background: rgba(42,30,59,.78); font: 600 11px/1 var(--latin); transition: transform .16s cubic-bezier(.23,1,.32,1); }
+.scp-play svg { width: 16px; height: 16px; fill: #fff; }
+.scp:active .scp-play { transform: scale(.96); }
+.scp-drift { transform: scale(1.06); transition: transform 8.5s linear; }
+.scp.is-playing .scp-drift { transform: scale(1.16) translateX(-1.7%); }
+@media (prefers-reduced-motion: reduce) { .scp-drift, .scp.is-playing .scp-drift { transform: none; transition: none; } .scp-play { transition: none; } }

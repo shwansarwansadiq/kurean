@@ -1,8 +1,8 @@
 import { db } from "./db";
-import { facebookFeed, facebookReel, facebookStory, facebookVideoStory, instagramFeed, instagramReel, instagramStory, instagramVideoStory, metaTargets } from "./meta";
+import { facebookFeed, facebookStory, facebookVideoStory, instagramFeed, instagramStory, instagramVideoStory, metaTargets } from "./meta";
 import { renderCards } from "./render-card";
 
-export type SocialResult = { platform: string; kind: "feed" | "story" | "reel"; ok: boolean; id?: string; error?: string };
+export type SocialResult = { platform: string; kind: "feed" | "story"; ok: boolean; id?: string; error?: string };
 
 type StoryRow = { id: number; caption_instagram: string; caption_facebook: string; image_credit?: string | null };
 
@@ -70,22 +70,16 @@ export async function publishSocial(storyId: number, platforms: string[], kinds:
   return results;
 }
 
-/**
- * The story's motion video on Instagram and Facebook: a Reel on each (with the caption), and the video story when the
- * card story was held back for it. Called by the 5-minute publish job once the video is ready.
- */
-export async function publishReel(storyId: number, platforms: string[], videoUrl: string, asStory: boolean): Promise<SocialResult[]> {
+/** The story's motion video as its Instagram and Facebook story (never a feed post or Reel; Shwan, 2 Nov). */
+export async function publishVideoStory(storyId: number, platforms: string[], videoUrl: string): Promise<SocialResult[]> {
   const wanted = platforms.filter((p) => p === "instagram" || p === "facebook");
-  const { data, error } = await db().from("stories").select("id, caption_instagram, caption_facebook, image_credit").eq("id", storyId).single<StoryRow>();
-  if (error) throw error;
-  const cap = captions(data);
   const results: SocialResult[] = [];
-  const attempt = async (platform: string, kind: "story" | "reel", fn: () => Promise<string>) => {
+  const attempt = async (platform: string, fn: () => Promise<string>) => {
     let r: SocialResult;
     try {
-      r = { platform, kind, ok: true, id: await fn() };
+      r = { platform, kind: "story", ok: true, id: await fn() };
     } catch (e) {
-      r = { platform, kind, ok: false, error: e instanceof Error ? e.message : String(e) };
+      r = { platform, kind: "story", ok: false, error: e instanceof Error ? e.message : String(e) };
     }
     results.push(r);
     await record(storyId, r);
@@ -94,16 +88,10 @@ export async function publishReel(storyId: number, platforms: string[], videoUrl
   try {
     t = await metaTargets();
   } catch (e) {
-    for (const p of wanted) await attempt(p, "reel", () => Promise.reject(e));
+    for (const p of wanted) await attempt(p, () => Promise.reject(e));
     return results;
   }
-  if (wanted.includes("instagram")) {
-    await attempt("instagram", "reel", () => instagramReel(t, videoUrl, cap.instagram));
-    if (asStory) await attempt("instagram", "story", () => instagramVideoStory(t, videoUrl));
-  }
-  if (wanted.includes("facebook")) {
-    await attempt("facebook", "reel", () => facebookReel(t, videoUrl, cap.facebook));
-    if (asStory) await attempt("facebook", "story", () => facebookVideoStory(t, videoUrl));
-  }
+  if (wanted.includes("instagram")) await attempt("instagram", () => instagramVideoStory(t, videoUrl));
+  if (wanted.includes("facebook")) await attempt("facebook", () => facebookVideoStory(t, videoUrl));
   return results;
 }
