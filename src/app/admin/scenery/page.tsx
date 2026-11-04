@@ -3,7 +3,7 @@ import { SceneryPreview } from "@/components/admin/SceneryPreview";
 import { Submit } from "@/components/admin/Submit";
 import { db } from "@/lib/db";
 import { ku } from "@/lib/site";
-import { FEED_HOUR, REPEAT_DAYS } from "@/lib/scenery";
+import { FEED_HOUR, REPEAT_DAYS, SCENERY_EVERY } from "@/lib/scenery";
 import { searchScenery, setScenery } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +57,7 @@ export default async function SceneryPage() {
     <AdminShell active="scenery" title="دیمەنی کۆریا">
       <div className="sched-top">
         <p className="adm-note">
-          لە نێوان هەواڵەکاندا لە ستۆریی ئینستاگرام و فەیسبووک: ٢٠ خولەک دوای هەر هەواڵێک، یەک دیمەنی پەسەندکراو (وێنە یان ڤیدیۆ) لەگەڵ
+          لە نێوان هەواڵەکاندا لە ستۆریی ئینستاگرام و فەیسبووک: ٢٠ خولەک دوای هەر {ku(SCENERY_EVERY)} هەواڵێک جارێک، یەک دیمەنی پەسەندکراو (وێنە یان ڤیدیۆ) لەگەڵ
           مۆسیقای خۆمان بڵاودەبێتەوە. هەروەها ڕۆژانە یەک دیمەن لە کاتژمێر {ku(FEED_HOUR)}:٠٠ دەچێتە فیدی ئینستاگرام و فەیسبووک. هەمان دیمەن تا {ku(REPEAT_DAYS)} ڕۆژ دووبارە نابێتەوە. هەموو هەفتەیەک دیمەنی نوێ دێت. بۆ بینینی دیمەنێک لەگەڵ مۆسیقاکەی، دەستی لێبدە.
         </p>
         {hasKey ? (

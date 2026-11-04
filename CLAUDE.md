@@ -193,7 +193,7 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   (Mon 06:17 UTC) → `/api/cron/scenery` → `refreshScenery()` adds ~24 vertical ≥1080×1920 candidates (photo + clip
   per place) as `pending`; /admin/scenery (دیمەن): approve/reject, "search now". Approved items are rendered by the
   video workflow (`Scenery` composition, 8.5 s: drift or clip, 📍 place card in Sorani + English, "Photo: <name> ·
-  Pexels", mark, music) into `scenery.video_url`. After any story is published to IG/FB, `queueSceneryAfter()` puts one
+  Pexels", mark, music) into `scenery.video_url`. After every second story published to IG/FB (Shwan, 4 Nov; `KUREAN_SCENERY_EVERY`, counted since the last queued clip), `queueSceneryAfter()` puts one
   ready clip in `social_queue` 20 min later (one waiting at a time; ≥60 days between repeats); the 5-min publish job
   posts it as IG + FB video stories (`instagramVideoStory`, `facebookVideoStory` in `meta.ts`). Music: four original
   loops composed in code for Kurean (`video/music-compose.py` → `video/public/music/*.m4a`: han-river, jeju-breeze,
@@ -206,7 +206,9 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   other video. **Preview before approval:** /admin/scenery draws the finished layout (place card, credit, mark) over each
   waiting clip and plays its music (`SceneryPreview.tsx`, music copied to `public/music/`).
   Meta limits (2 Nov): ~8 posts/hour got Facebook "we limit how often you can post" and IG "Application request limit
-  reached"; IG video status checks are every 6 s (each check counts toward the app limit).
+  reached"; IG video status checks are every 6 s (each check counts toward the app limit). From 2 Nov evening every IG photo
+  feed post failed with code 4/2207051 (Instagram anti-spam block on the account; stories/Reels unaffected); errors now carry
+  Meta's code and usage headers, `/api/meta/check?usage=1` shows quota and usage.
 
 - **Motion videos (Shwan, 30 Oct):** every recent pending/published story gets a 9:16 MP4 (`video/`, Remotion 4):
   `News` (11 s: photo zoom, headline word by word, 3 key points, logo end card) and `Chart` (18 s: 10 → 1 countdown,

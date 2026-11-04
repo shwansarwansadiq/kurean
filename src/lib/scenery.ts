@@ -19,6 +19,8 @@ import { MUSIC, PLACES, type Place } from "./places";
 const API = "https://api.pexels.com";
 export const REPEAT_DAYS = 60;
 export const GAP_AFTER_NEWS_MS = 20 * 60_000;
+/** A scenery story follows every this-many news stories (Shwan, 4 Nov: every second). */
+export const SCENERY_EVERY = Number(process.env.KUREAN_SCENERY_EVERY ?? 2);
 
 type PexelsPhoto = { id: number; width: number; height: number; url: string; alt?: string; photographer: string; photographer_url: string; src: { original: string } };
 type PexelsVideo = {
@@ -198,6 +200,17 @@ export async function queueSceneryAfter(storyId: number, platforms: string[], no
   const { data: waiting } = await db().from("social_queue").select("scenery_id").is("done_at", null);
   // One scenery between two news stories: if one is already waiting, the next news story does not add another.
   if (waiting?.length) return null;
+  // Only after every SCENERY_EVERY-th news story on Instagram/Facebook (Shwan, 4 Nov: every second, to post less).
+  const { data: last } = await db().from("social_queue").select("created_at").order("created_at", { ascending: false }).limit(1);
+  if (last?.[0]) {
+    const { count } = await db()
+      .from("stories")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "published")
+      .gt("published_at", last[0].created_at)
+      .overlaps("platforms", ["instagram", "facebook"]);
+    if ((count ?? 0) < SCENERY_EVERY) return null;
+  }
   const cutoff = new Date(now.getTime() - REPEAT_DAYS * 86_400_000).toISOString();
   const { data } = await db()
     .from("scenery")
