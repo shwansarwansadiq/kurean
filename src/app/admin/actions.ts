@@ -317,6 +317,20 @@ export async function markTikTok(form: FormData) {
   revalidatePath("/admin/tiktok");
 }
 
+/** Send (or send again) a published story's video to the TikTok inbox as a draft, on the next 5-minute run. */
+export async function sendToTikTok(form: FormData) {
+  await requireAdmin();
+  const id = idOf(form);
+  const { data } = await db().from("stories").select("platforms").eq("id", id).maybeSingle();
+  const platforms = [...new Set([...((data?.platforms as string[] | null) ?? ["website"]), "tiktok"])];
+  await db()
+    .from("stories")
+    .update({ platforms, tiktok_sent_at: null, tiktok_next_try: null, tiktok_result: "queued", tiktok_done: false })
+    .eq("id", id)
+    .eq("status", "published");
+  revalidatePath("/admin/tiktok");
+}
+
 /** Scenery library: approve or reject a Pexels candidate (approved ones get a clip with music, then post). */
 export async function setScenery(form: FormData) {
   await requireAdmin();

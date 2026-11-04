@@ -14,6 +14,7 @@ export default function Privacy() {
         <div className="art-body">
           <p>کوریەن ماڵپەڕێکی هەواڵە. هەژمار دروست ناکەین و داتای خوێنەران نافرۆشین. ژمارەی خوێنەران بە ئامرازێکی خۆمان دەژمێرین، بێ کوکی و بێ هەڵگرتنی ناونیشانی IP؛ بە ڕازیبوونی خۆت ناسنامەیەکی هەڕەمەکی لە وێبگەڕەکەت هەڵدەگرین. <a href="/measure">چۆن دەپێوین</a>.</p>
           <p>ئەپی KUREAN لە Meta تەنها بۆ بڵاوکردنەوەی هەواڵەکانمان لە پەڕەی فەیسبووک و ئینستاگرامی خۆمان (@kurean.news) بەکاردێت. هیچ داتایەکی بەکارهێنەران لە فەیسبووک یان ئینستاگرام وەرناگرێت.</p>
+          <p>ئەپی KUREAN لە تیکتۆک تەنها ڤیدیۆکانی خۆمان وەک ڕەشنووس دەنێرێتە ئینبۆکسی هەژماری تیکتۆکی خۆمان (@kurean.news). تەنها ناسنامەی ئەو هەژمارە و کلیلەکانی پەیوەستبوون هەڵدەگرین و هیچ داتایەکی بەکارهێنەرانی تیکتۆک وەرناگرین.</p>
           <p>لە ڕیزبەندیی کۆریادا، ڤیدیۆکان بە لێدەری خودی یوتیوب (<bdi className="lat">youtube-nocookie.com</bdi>) لێدەدرێن و تەنها کاتێک دەکرێنەوە کە خۆت دوگمەی لێدان دادەگریت؛ لەو کاتەوە یاساکانی تایبەتمەندیی گووگڵ دەگرێتەوە. بەستەرەکانی <bdi className="lat">Spotify</bdi> تەنها بەستەرن.</p>
           <p>بۆ هەر پرسیارێک یان داوای لابردنی ناوەڕۆک، نامە بنێرە بۆ <bdi className="lat">@kurean.news</bdi>.</p>
         </div>
@@ -21,7 +22,9 @@ export default function Privacy() {
           <p>
             <strong>Privacy policy (English).</strong> Kurean is a news website. We do not create reader accounts or sell data. We count readers with
             our own first-party tool: no cookies, no stored IP addresses, and a random ID in your browser only if you agree (see /measure). The KUREAN Meta app is used only to publish our own stories to our own
-            Facebook Page and Instagram account (@kurean.news); it does not collect data about Facebook or Instagram users. Videos in
+            Facebook Page and Instagram account (@kurean.news); it does not collect data about Facebook or Instagram users. The KUREAN TikTok app is used only to send our own videos as drafts
+            to our own TikTok account&apos;s inbox (@kurean.news); we store only that account&apos;s ID and its access tokens, and collect
+            no data about TikTok users. Videos in
             the Korea chart play in YouTube&apos;s own player (youtube-nocookie.com), loaded only when you press play; from then Google&apos;s
             privacy policy applies. Spotify buttons are plain links. For
             questions or removal requests, message @kurean.news.

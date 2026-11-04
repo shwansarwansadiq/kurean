@@ -34,6 +34,7 @@
 .src a i { font-style: normal; color: var(--ink-2); font-weight: 500; margin-left: 5px; }
 .flag { margin: 0; font-size: 13px; line-height: 1.7; color: #7a4300; background: #fff1d6; border-radius: 12px; padding: 9px 12px; }
 .flag.warn { color: #8a1f3d; background: #ffe3ec; }
+.flag.ok { color: #1f6b56; background: #e2f5ee; }
 
 .pub-form { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; }
 .plat { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -274,3 +275,10 @@
 .scp-drift { transform: scale(1.06); transition: transform 8.5s linear; }
 .scp.is-playing .scp-drift { transform: scale(1.16) translateX(-1.7%); }
 @media (prefers-reduced-motion: reduce) { .scp-drift, .scp.is-playing .scp-drift { transform: none; transition: none; } .scp-play { transition: none; } }
+
+/* TikTok drafts */
+.tt-connect { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; background: #fff;
+  border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; margin-bottom: 12px; }
+.tt-connect p { margin: 0; font-size: 13.5px; line-height: 1.85; flex: 1 1 320px; }
+.tt-draft { margin: 0; font-size: 12.5px; color: var(--ink-2); }
+.tt-draft.ok { color: #2f7d68; font-weight: 700; }

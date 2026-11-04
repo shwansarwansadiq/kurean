@@ -69,8 +69,8 @@ export function StoryCard({ story, nextSlot }: { story: AdminStory; nextSlot: Da
             <legend>بڵاوکردنەوە لە</legend>
             {PLATFORMS.map((p) => (
               <label key={p} className={p === "website" ? "locked" : undefined}>
-                <input type="checkbox" name={`p_${p}`} defaultChecked={p !== "tiktok"} disabled={p === "website" || p === "tiktok"} />
-                <span>{PLATFORM_LABEL[p]}{p === "tiktok" ? " (بەم زووانە)" : ""}</span>
+                <input type="checkbox" name={`p_${p}`} defaultChecked disabled={p === "website"} />
+                <span>{PLATFORM_LABEL[p]}{p === "tiktok" ? " (ڕەشنووس)" : ""}</span>
               </label>
             ))}
           </fieldset>

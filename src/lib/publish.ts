@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { publishSocial, publishVideoStory } from "./social";
 import { readyVideo } from "./video";
+import { sendTikTokDrafts } from "./tiktok";
 
 /** A video story still not posted this long after publishing is given up. */
 const REEL_WAIT_MS = 6 * 3600_000;
@@ -34,6 +35,8 @@ export async function publishApproved(id: number, platforms: string[], from: str
 
 /** The scheduler's pass: publishes approved stories whose time has come (oldest first, two at a time). */
 export async function publishDue(now = new Date()): Promise<number[]> {
+  // TikTok first: one quick upload to the inbox (drafts; Shwan posts them himself with a trending sound).
+  await sendTikTokDrafts(now).catch((e) => console.error("tiktok failed", e));
   // Video posts take a minute or two each; the run has 5 minutes, so the daily feed clip waits for a quiet run.
   const scenery = await postDueScenery(now).catch((e) => (console.error("scenery failed", e), 0));
   const videos = await postDueReels(now).catch((e) => (console.error("video stories failed", e), []));

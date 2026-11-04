@@ -41,7 +41,7 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
   `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids),
   `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`), `migrate-009-video.sql` (video, tiktok_done),
   `migrate-010-schedule.sql` (`scheduled_at`), `migrate-011-scenery.sql` (`scenery`, `social_queue`),
-  `migrate-012-scenery-source.sql` (`scenery.source`), `migrate-013-reels.sql` (`reel_status`, `reel_story`, `reel_posted_at`), `migrate-014-scenery-feed.sql` (`scenery_feed`, `scenery.feed_posted_at`). Env also: `META_TOKEN`.
+  `migrate-012-scenery-source.sql` (`scenery.source`), `migrate-013-reels.sql` (`reel_status`, `reel_story`, `reel_posted_at`), `migrate-014-scenery-feed.sql` (`scenery_feed`, `scenery.feed_posted_at`), `migrate-015-tiktok.sql` (`tiktok_auth`, `stories.tiktok_*`). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -223,7 +223,16 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   scenery approvals), and Supabase job `kurean-videos` (every 15 min) → `/api/cron/videos` starts it whenever a video
   is waiting — the reliable trigger, since GitHub's schedule ran only every few hours. **News videos as stories, never in the feed (Shwan, 2 Nov):** when a story is published and its motion video is already
   made and current, the still card story is skipped and the 5-min publish job (`postDueReels` → `publishVideoStory`) posts
-  the video as the IG + FB story; otherwise the card story goes as before. No news Reels/feed videos. Not yet: TikTok Content Posting API. Remotion's licence is
+  the video as the IG + FB story; otherwise the card story goes as before. No news Reels/feed videos.
+  **TikTok drafts (Shwan, 4 Nov, chose drafts over public posting):** `lib/tiktok.ts`, Content Posting API "upload"
+  (scope `video.upload`, FILE_UPLOAD one chunk, so no domain verification). Shwan connects once in /admin/tiktok
+  (`/api/tiktok/connect` → TikTok → `/api/tiktok/callback`, state cookie, tokens in `tiktok_auth`; access 24 h, refresh
+  365 days). Stories published with the TikTok box ticked get their video sent to the @kurean.news inbox by the 5-min
+  publish job (`sendTikTokDrafts`: one per run, ≤5 per 24 h — TikTok's limit on waiting drafts; "spam_risk"/rate limit →
+  retry in 1 h; only stories published in the last 2 days unless sent by hand). Drafts carry no caption: Shwan copies it
+  from /admin/tiktok, adds a trending sound and posts. Env `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`; redirect URI
+  `https://kurean.news/api/tiktok/callback`. Terms page `/terms`, privacy page mentions TikTok (needed by TikTok's app form).
+  Public posting by the API would need TikTok's content audit (weeks; private until it passes). Remotion's licence is
   free for individuals and companies of up to 3 people. Local: `cd video && npx remotion studio src/index.ts`.
   `Promo` (29 s) is the site advert: mark, promise, four categories, credited sources, clocks, top 100 + player,
   socials, end card. Render: `npx remotion render src/index.ts Promo out/kurean-promo.mp4`.

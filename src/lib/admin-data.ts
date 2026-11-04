@@ -37,6 +37,8 @@ export type AdminStory = {
   video_url?: string | null;
   video_made_at?: string | null;
   tiktok_done?: boolean;
+  tiktok_sent_at?: string | null;
+  tiktok_result?: string | null;
   chart_week?: string | null;
   chart_top?: import("./chart-story").ChartTopItem[] | null;
   platforms: string[];

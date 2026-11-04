@@ -90,7 +90,7 @@ export async function SiteFooter() {
           <a href="https://www.facebook.com/kurean.news" className="handle" rel="noopener">Facebook</a>
         </div>
         <span className="handle-name" dir="ltr">@kurean.news</span>
-        <small>هەموو هەواڵێک سەرچاوەکەی لەگەڵدایە و پێش بڵاوکردنەوە دەخوێنرێتەوە. <a href="/privacy">تایبەتمەندی</a></small>
+        <small>هەموو هەواڵێک سەرچاوەکەی لەگەڵدایە و پێش بڵاوکردنەوە دەخوێنرێتەوە. <a href="/privacy">تایبەتمەندی</a> · <a href="/terms">مەرجەکان</a></small>
       </div>
     </footer>
   );
