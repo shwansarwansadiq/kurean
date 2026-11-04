@@ -15,9 +15,27 @@ async function graph<T>(path: string, params: Record<string, string>, method: "G
     body: method === "POST" ? body : undefined,
     signal: AbortSignal.timeout(30_000),
   });
-  const json = (await res.json().catch(() => ({}))) as T & { error?: { message?: string; code?: number } };
-  if (!res.ok || json.error) throw new MetaError(json.error?.message ?? `Meta ${res.status}`);
+  const json = (await res.json().catch(() => ({}))) as T & { error?: { message?: string; code?: number; error_subcode?: number } };
+  if (!res.ok || json.error) {
+    // The code and Meta's own usage headers say which limit was hit (app, Page or Instagram account).
+    const usage = ["x-app-usage", "x-business-use-case-usage"].map((h) => res.headers.get(h)).filter(Boolean).join(" ");
+    const code = json.error?.code ? ` [${json.error.code}${json.error.error_subcode ? `/${json.error.error_subcode}` : ""}]` : "";
+    throw new MetaError(`${json.error?.message ?? `Meta ${res.status}`}${code}${usage ? ` usage: ${usage.slice(0, 300)}` : ""}`);
+  }
   return json;
+}
+
+/** Meta's usage headers and Instagram's publishing quota, for /api/meta/check (reads only, posts nothing). */
+export async function metaUsage(t: MetaTargets): Promise<Record<string, unknown>> {
+  const out: Record<string, unknown> = {};
+  if (t.igId) {
+    const res = await fetch(`${GRAPH}/${t.igId}/content_publishing_limit?${new URLSearchParams({ fields: "config,quota_usage", access_token: t.pageToken })}`, { signal: AbortSignal.timeout(30_000) });
+    out.instagramQuota = await res.json().catch(() => null);
+    out.instagramHeaders = Object.fromEntries(["x-app-usage", "x-business-use-case-usage"].map((h) => [h, res.headers.get(h)]));
+  }
+  const res = await fetch(`${GRAPH}/${t.pageId}?${new URLSearchParams({ fields: "id", access_token: t.pageToken })}`, { signal: AbortSignal.timeout(30_000) });
+  out.pageHeaders = Object.fromEntries(["x-app-usage", "x-page-usage", "x-business-use-case-usage"].map((h) => [h, res.headers.get(h)]));
+  return out;
 }
 
 export type MetaTargets = { pageId: string; pageName: string; pageToken: string; igId: string | null; igUsername: string | null };
