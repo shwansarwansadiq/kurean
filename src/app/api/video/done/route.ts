@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   if (!(await isVideoWorker(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const body = (await req.json().catch(() => null)) as { id?: number; hash?: string; path?: string; target?: string } | null;
   if (!body?.id || !body.hash || !body.path) return NextResponse.json({ error: "id, hash and path are needed" }, { status: 400 });
-  const ok = await videoDone(body.id, body.hash, body.path, body.target === "scenery" ? "scenery" : "story");
+  const ok = await videoDone(body.id, body.hash, body.path, body.target === "scenery" || body.target === "roundup" ? body.target : "story");
   if (ok) {
     revalidatePath("/admin/tiktok");
     revalidatePath("/admin/scenery");

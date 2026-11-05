@@ -77,3 +77,31 @@ export async function renderCards(storyId: number, formats: CardFormat[] = ["fee
   }
   return out;
 }
+
+/** Renders any card pages (e.g. the daily round-up slides) to JPEGs in the story-images bucket, in order. */
+export async function renderPages(pages: { url: string; width: number; height: number; name: string }[]): Promise<string[]> {
+  const browser = await launch();
+  const out: string[] = [];
+  try {
+    for (const p of pages) {
+      const page = await browser.newPage();
+      await page.setViewport({ width: p.width, height: p.height, deviceScaleFactor: 1 });
+      await page.goto(p.url, { waitUntil: "networkidle0", timeout: 45_000 });
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        await Promise.all([...document.images].map((i) => (i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; }))));
+      });
+      if (!(await page.$("#card"))) throw new Error(`${p.name} did not render`);
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const jpg = (await page.screenshot({ type: "jpeg", quality: 92, clip: { x: 0, y: 0, width: p.width, height: p.height } })) as Uint8Array;
+      const path = `cards/${p.name}-${Date.now().toString(36)}.jpg`;
+      const { error } = await db().storage.from("story-images").upload(path, jpg, { contentType: "image/jpeg", upsert: true });
+      if (error) throw error;
+      out.push(db().storage.from("story-images").getPublicUrl(path).data.publicUrl);
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+  }
+  return out;
+}

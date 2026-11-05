@@ -19,8 +19,8 @@ import { MUSIC, PLACES, type Place } from "./places";
 const API = "https://api.pexels.com";
 export const REPEAT_DAYS = 60;
 export const GAP_AFTER_NEWS_MS = 20 * 60_000;
-/** A scenery story follows every this-many news stories (Shwan, 4 Nov: every second). */
-export const SCENERY_EVERY = Number(process.env.KUREAN_SCENERY_EVERY ?? 2);
+/** A scenery story follows every this-many news stories; 0 = never (Shwan, 6 Nov: one scenery a day, the 13:00 one). */
+export const SCENERY_EVERY = Number(process.env.KUREAN_SCENERY_EVERY ?? 0);
 
 type PexelsPhoto = { id: number; width: number; height: number; url: string; alt?: string; photographer: string; photographer_url: string; src: { original: string } };
 type PexelsVideo = {
@@ -196,7 +196,7 @@ export async function refreshScenery(want = 24, now = new Date()): Promise<{ add
 /** After a story goes to Instagram/Facebook, line up one approved, rendered scenery clip for 20 minutes later. */
 export async function queueSceneryAfter(storyId: number, platforms: string[], now = new Date()): Promise<number | null> {
   const social = platforms.filter((p) => p === "instagram" || p === "facebook");
-  if (!social.length) return null;
+  if (!social.length || SCENERY_EVERY <= 0) return null;
   const { data: waiting } = await db().from("social_queue").select("scenery_id").is("done_at", null);
   // One scenery between two news stories: if one is already waiting, the next news story does not add another.
   if (waiting?.length) return null;
@@ -309,9 +309,12 @@ export async function postDailySceneryFeed(now = new Date()): Promise<number | n
   const results: string[] = [];
   try {
     const t = await metaTargets();
+    // The day's one scenery clip: a Reel on each feed and a story on each (Shwan, 6 Nov).
     for (const [p, post] of [
       ["instagram", () => instagramReel(t, pick.video_url, cap.instagram)],
+      ["instagram story", () => instagramVideoStory(t, pick.video_url)],
       ["facebook", () => facebookReel(t, pick.video_url, cap.facebook)],
+      ["facebook story", () => facebookVideoStory(t, pick.video_url)],
     ] as const) {
       try {
         results.push(`${p}: ok ${await post()}`);

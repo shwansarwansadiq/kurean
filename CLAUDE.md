@@ -41,7 +41,7 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
   `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids),
   `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`), `migrate-009-video.sql` (video, tiktok_done),
   `migrate-010-schedule.sql` (`scheduled_at`), `migrate-011-scenery.sql` (`scenery`, `social_queue`),
-  `migrate-012-scenery-source.sql` (`scenery.source`), `migrate-013-reels.sql` (`reel_status`, `reel_story`, `reel_posted_at`), `migrate-014-scenery-feed.sql` (`scenery_feed`, `scenery.feed_posted_at`), `migrate-015-tiktok.sql` (`tiktok_auth`, `stories.tiktok_*`). Env also: `META_TOKEN`.
+  `migrate-012-scenery-source.sql` (`scenery.source`), `migrate-013-reels.sql` (`reel_status`, `reel_story`, `reel_posted_at`), `migrate-014-scenery-feed.sql` (`scenery_feed`, `scenery.feed_posted_at`), `migrate-015-tiktok.sql` (`tiktok_auth`, `stories.tiktok_*`), `migrate-016-roundup.sql` (`roundups`). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
@@ -170,9 +170,18 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
 
 ## Social publishing (phase 5)
 
-- **Every story goes to the feed as well as stories (Shwan, 30 Oct):** Instagram + Facebook feed post 1080×1350 and
-  story 1080×1920, TikTok carousel, each made from the source photo in Kurean's design with the card headline on it
-  (`SocialCards.tsx` is the layout to export). Captions from the story's caption fields.
+- **Every story goes to the feed as well as stories (Shwan, 30 Oct):** Facebook feed post 1080×1350 and story
+  1080×1920, each made from the source photo in Kurean's design with the card headline on it (`SocialCards.tsx` is the
+  layout to export). Captions from the story's caption fields. **Instagram (Shwan, 6 Nov): no feed photo per story** (the
+  account's photo posts were being blocked as spam) — each story still gets its IG story; the feed gets the daily round-up.
+- **Daily Instagram round-up (Shwan, 6 Nov):** `lib/roundup.ts` + `roundup-post.ts`. At 21:00 Hawler (`KUREAN_ROUNDUP_HOUR`)
+  the day's stories published with Instagram ticked (max 8, oldest first, weekly chart excluded) go out as one carousel
+  (1080×1350: cover with the headlines as a numbered list, each story's feed card, end slide — `RoundupCards.tsx`,
+  `/card/roundup/<day>?slide=cover|end&f=feed|story`) plus the cover as an IG story, then one video (`Roundup`
+  composition: intro, 3.5 s per story, end card, rotating Kurean music loop) as an IG Reel + IG story. The 5-min publish
+  job keeps today's `roundups` row current before 21:00 (the video renders ahead), freezes it at 21:00 (`posting` →
+  `video` → `done`; `empty` if none), and gives the Reel up 3 h after 21:00 if the video for the frozen list isn't ready.
+  /admin/published shows today's round-up and results. Captions: numbered headlines, kurean.news, photo credits, tags.
 
 - **Built:** Publish in /admin → site first, then `social.ts` renders `/card/<id>?f=feed|story` to JPEG with headless
   Chromium (`render-card.ts`, @sparticuz/chromium) and posts feed + story to Instagram and Facebook (`meta.ts`,
@@ -193,7 +202,7 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   (Mon 06:17 UTC) → `/api/cron/scenery` → `refreshScenery()` adds ~24 vertical ≥1080×1920 candidates (photo + clip
   per place) as `pending`; /admin/scenery (دیمەن): approve/reject, "search now". Approved items are rendered by the
   video workflow (`Scenery` composition, 8.5 s: drift or clip, 📍 place card in Sorani + English, "Photo: <name> ·
-  Pexels", mark, music) into `scenery.video_url`. After every second story published to IG/FB (Shwan, 4 Nov; `KUREAN_SCENERY_EVERY`, counted since the last queued clip), `queueSceneryAfter()` puts one
+  Pexels", mark, music) into `scenery.video_url`. Scenery after news stories is off since 6 Nov (Shwan: one scenery a day; `KUREAN_SCENERY_EVERY`=0; when >0, after every N-th story published to IG/FB) — `queueSceneryAfter()` puts one
   ready clip in `social_queue` 20 min later (one waiting at a time; ≥60 days between repeats); the 5-min publish job
   posts it as IG + FB video stories (`instagramVideoStory`, `facebookVideoStory` in `meta.ts`). Music: four original
   loops composed in code for Kurean (`video/music-compose.py` → `video/public/music/*.m4a`: han-river, jeju-breeze,
@@ -201,7 +210,7 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   (`PIXABAY_API_KEY`; Pexels paused new API keys on 31 Oct; Pexels code kept for `PEXELS_API_KEY`) (migrate-011, 012).
   Pexels rules: credit the photographer, our design on top, no bulk copying, never for model training.
   **Daily scenery feed post (Shwan, 2 Nov: once a day):** from 13:00 Hawler (`KUREAN_SCENERY_FEED_HOUR`), the publish job
-  posts one ready clip as an IG Reel (shared to the grid) + FB Reel with a Sorani caption (`postDailySceneryFeed`,
+  posts one ready clip as an IG Reel (shared to the grid) + FB Reel with a Sorani caption, and as IG + FB stories (6 Nov) (`postDailySceneryFeed`,
   `feedCaptions` in `scenery.ts`); one row per day in `scenery_feed` is the claim. Runs only when that 5-min run posted no
   other video. **Preview before approval:** /admin/scenery draws the finished layout (place card, credit, mark) over each
   waiting clip and plays its music (`SceneryPreview.tsx`, music copied to `public/music/`).

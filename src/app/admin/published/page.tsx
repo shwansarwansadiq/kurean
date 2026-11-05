@@ -4,13 +4,57 @@ import { Submit } from "@/components/admin/Submit";
 import { Bidi } from "@/components/Bidi";
 import { socialPosts, storiesByStatus } from "@/lib/admin-data";
 import { CATEGORY_META, ku, soraniDate } from "@/lib/site";
+import { cutoffOf, getRoundup, hawlerDay, ROUNDUP_HOUR, roundupStories, storiesByIds } from "@/lib/roundup";
 import { restoreStory, retrySocial } from "../actions";
+
+/** Today's 21:00 Instagram round-up: which stories are in it and what happened. */
+async function RoundupStatus() {
+  const day = hawlerDay(new Date());
+  const row = await getRoundup(day).catch(() => null);
+  const stories = row?.story_ids.length
+    ? await storiesByIds(row.story_ids)
+    : await roundupStories(day, new Date(Math.min(Date.now(), cutoffOf(day).getTime()))).catch(() => []);
+  const state =
+    !row || row.status === "collecting"
+      ? `کاتژمێر ${ku(ROUNDUP_HOUR)}:٠٠ بڵاودەبێتەوە${row?.video_url ? " · ڤیدیۆکەی ئامادەیە" : ""}`
+      : row.status === "empty"
+        ? "ئەمڕۆ هیچ هەواڵێک بۆ ئینستاگرام بڵاونەکرایەوە"
+        : row.status === "done"
+          ? "بڵاوکرایەوە"
+          : "بڵاودەکرێتەوە…";
+  const results = [row?.carousel_result, row?.story_result, row?.reel_result].filter(Boolean).join(" · ");
+  return (
+    <section className="roundup-box">
+      <h2>
+        کۆکراوەی ئەمڕۆ لە ئینستاگرام · {ku(stories.length)} هەواڵ
+      </h2>
+      <p>
+        {state}. کاروسێلێکی وێنە و ڤیدیۆیەک (هەردووکیان لە ستۆریشدا) لە هەواڵەکانی ئەمڕۆ کە بە ئینستاگرامەوە بڵاوت کردوونەتەوە.
+      </p>
+      {stories.length ? (
+        <ol>
+          {stories.map((s) => (
+            <li key={s.id}>
+              <Bidi text={s.card_headline} />
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {results ? (
+        <p className="social" dir="ltr">
+          {results}
+        </p>
+      ) : null}
+    </section>
+  );
+}
 
 export default async function Published() {
   const [published, skipped] = await Promise.all([storiesByStatus("published"), storiesByStatus("skipped", 20)]);
   const posts = await socialPosts(published.map((s) => s.id));
   return (
     <AdminShell active="published" title="بڵاوکراوەکان">
+      <RoundupStatus />
       <ul className="rows">
         {published.map((s) => (
           <li key={s.id}>

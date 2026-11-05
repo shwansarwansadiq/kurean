@@ -44,7 +44,7 @@ type Row = {
   video_hash: string | null;
 };
 
-export type VideoJob = { id: number; composition: "News" | "Chart" | "Scenery"; props: Record<string, unknown>; hash: string; target?: "story" | "scenery" };
+export type VideoJob = { id: number; composition: "News" | "Chart" | "Scenery" | "Roundup"; props: Record<string, unknown>; hash: string; target?: "story" | "scenery" | "roundup" };
 
 /** What the video shows. When this changes (an edit, a new photo), the video is made again. */
 export function videoJob(s: Row): VideoJob | null {
@@ -63,7 +63,8 @@ export function videoJob(s: Row): VideoJob | null {
 }
 
 const DESIGN_VERSION = "v2";
-const SCENERY_VERSION = "s1"; // bump when the scenery design or music changes // v2: TikTok safe area // bump when the video designs change, to remake recent videos
+const SCENERY_VERSION = "s1";
+const ROUNDUP_VERSION = "r1"; // bump when the round-up video design changes // bump when the scenery design or music changes // v2: TikTok safe area // bump when the video designs change, to remake recent videos
 
 function withHash(id: number, composition: VideoJob["composition"], props: Record<string, unknown>): VideoJob {
   const hash = createHash("sha256").update(DESIGN_VERSION + JSON.stringify({ composition, props })).digest("hex").slice(0, 16);
@@ -78,7 +79,34 @@ export function sceneryJob(s: SceneryRow): VideoJob {
   return { id: s.id, composition: "Scenery", props, hash, target: "scenery" };
 }
 
-/** Videos to make: recent stories first, then approved scenery clips, each with a one-time upload address. */
+/** Today's round-up video (and a frozen one still waiting for its video), if it has stories. */
+async function roundupJobs(): Promise<VideoJob[]> {
+  const { data } = await db().from("roundups").select("day, story_ids, status, video_hash").in("status", ["collecting", "posting", "video"]);
+  const jobs: VideoJob[] = [];
+  for (const r of (data ?? []) as { day: string; story_ids: number[]; status: string; video_hash: string | null }[]) {
+    const job = await roundupJob(r.day, r.story_ids);
+    if (job && job.hash !== r.video_hash) jobs.push(job);
+  }
+  return jobs;
+}
+
+export async function roundupJob(day: string, ids: number[]): Promise<VideoJob | null> {
+  const { storiesByIds, roundupVideoProps, roundupVideoId } = await import("./roundup");
+  const stories = await storiesByIds(ids);
+  if (!stories.length) return null;
+  const props = roundupVideoProps(day, stories);
+  const hash = createHash("sha256").update(ROUNDUP_VERSION + JSON.stringify(props)).digest("hex").slice(0, 16);
+  return { id: roundupVideoId(day), composition: "Roundup", props, hash, target: "roundup" };
+}
+
+/** The round-up's video, if it is made for exactly the frozen list. */
+export async function readyRoundupVideo(row: { day: string; story_ids: number[]; video_url: string | null; video_hash: string | null }): Promise<string | null> {
+  if (!row.video_url) return null;
+  const job = await roundupJob(row.day, row.story_ids);
+  return job?.hash === row.video_hash ? row.video_url : null;
+}
+
+/** Videos to make: recent stories first, then the round-up, then approved scenery clips, each with an upload address. */
 export async function videoJobs(limit = 3): Promise<(VideoJob & { upload: { path: string; signedUrl: string; token: string } })[]> {
   const since = new Date(Date.now() - 4 * 86_400_000).toISOString();
   const { data, error } = await db()
@@ -94,6 +122,7 @@ export async function videoJobs(limit = 3): Promise<(VideoJob & { upload: { path
     .map((r) => ({ r, job: videoJob(r) }))
     .filter((x) => x.job && x.job.hash !== x.r.video_hash)
     .map((x) => ({ ...x.job!, target: "story" as const }));
+  jobs.push(...(await roundupJobs().catch(() => [])));
   if (jobs.length < limit) {
     const { data: sc } = await db()
       .from("scenery")
@@ -108,7 +137,7 @@ export async function videoJobs(limit = 3): Promise<(VideoJob & { upload: { path
   }
   const out = [];
   for (const job of jobs.slice(0, limit)) {
-    const path = `video/${job.target === "scenery" ? "scenery" : "story"}-${job.id}-${job.hash}.mp4`;
+    const path = `video/${job.target ?? "story"}-${job.id}-${job.hash}.mp4`;
     const { data: up, error: upError } = await db().storage.from(BUCKET).createSignedUploadUrl(path, { upsert: true });
     if (upError || !up) continue;
     out.push({ ...job, upload: { path, signedUrl: up.signedUrl, token: up.token } });
@@ -117,10 +146,14 @@ export async function videoJobs(limit = 3): Promise<(VideoJob & { upload: { path
 }
 
 /** Records a finished video, if it still matches the story or scenery item (it may have changed while rendering). */
-export async function videoDone(id: number, hash: string, path: string, target: "story" | "scenery" = "story"): Promise<boolean> {
-  const re = target === "scenery" ? /^video\/scenery-\d+-[0-9a-f]{16}\.mp4$/ : /^video\/story-\d+-[0-9a-f]{16}\.mp4$/;
-  if (!re.test(path)) return false;
+export async function videoDone(id: number, hash: string, path: string, target: "story" | "scenery" | "roundup" = "story"): Promise<boolean> {
+  if (!new RegExp(`^video/${target}-\\d+-[0-9a-f]{16}\\.mp4$`).test(path)) return false;
   const url = db().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  if (target === "roundup") {
+    const { dayOfVideoId } = await import("./roundup");
+    const { error } = await db().from("roundups").update({ video_url: url, video_hash: hash }).eq("day", dayOfVideoId(id));
+    return !error;
+  }
   const { error } =
     target === "scenery"
       ? await db().from("scenery").update({ video_url: url, video_hash: hash }).eq("id", id)
@@ -166,6 +199,7 @@ export async function videosWaiting(): Promise<number> {
   let n = ((data ?? []) as Row[]).filter((r) => videoJob(r) && videoJob(r)!.hash !== r.video_hash).length;
   const { data: sc } = await db().from("scenery").select("id, kind, url, place_en, place_ckb, photographer, source, music, video_hash").eq("status", "approved").limit(100);
   n += ((sc ?? []) as SceneryRow[]).filter((r) => sceneryJob(r).hash !== r.video_hash).length;
+  n += (await roundupJobs().catch(() => [])).length;
   return n;
 }
 

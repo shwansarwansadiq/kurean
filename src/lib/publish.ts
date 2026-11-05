@@ -6,6 +6,7 @@ import { sendTikTokDrafts } from "./tiktok";
 /** A video story still not posted this long after publishing is given up. */
 const REEL_WAIT_MS = 6 * 3600_000;
 import { postDailySceneryFeed, postDueScenery, queueSceneryAfter } from "./scenery";
+import { postRoundup, syncRoundup } from "./roundup";
 
 /**
  * Publishes a story Shwan approved: the site first, then social media (the cards link back to the article).
@@ -37,10 +38,13 @@ export async function publishApproved(id: number, platforms: string[], from: str
 export async function publishDue(now = new Date()): Promise<number[]> {
   // TikTok first: one quick upload to the inbox (drafts; Shwan posts them himself with a trending sound).
   await sendTikTokDrafts(now).catch((e) => console.error("tiktok failed", e));
+  // The daily Instagram round-up (21:00): keep today's list current, then post it. Posting it fills a run.
+  await syncRoundup(now).catch((e) => console.error("roundup sync failed", e));
+  const roundup = await postRoundup(now).catch((e) => (console.error("roundup failed", e), false));
   // Video posts take a minute or two each; the run has 5 minutes, so the daily feed clip waits for a quiet run.
-  const scenery = await postDueScenery(now).catch((e) => (console.error("scenery failed", e), 0));
-  const videos = await postDueReels(now).catch((e) => (console.error("video stories failed", e), []));
-  if (!scenery && !videos.length) await postDailySceneryFeed(now).catch((e) => console.error("scenery feed failed", e));
+  const scenery = roundup ? 0 : await postDueScenery(now).catch((e) => (console.error("scenery failed", e), 0));
+  const videos = roundup ? [0] : await postDueReels(now).catch((e) => (console.error("video stories failed", e), []));
+  if (!roundup && !scenery && !videos.length) await postDailySceneryFeed(now).catch((e) => console.error("scenery feed failed", e));
   const { data, error } = await db()
     .from("stories")
     .select("id, platforms")

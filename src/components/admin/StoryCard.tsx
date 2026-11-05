@@ -70,7 +70,7 @@ export function StoryCard({ story, nextSlot }: { story: AdminStory; nextSlot: Da
             {PLATFORMS.map((p) => (
               <label key={p} className={p === "website" ? "locked" : undefined}>
                 <input type="checkbox" name={`p_${p}`} defaultChecked disabled={p === "website"} />
-                <span>{PLATFORM_LABEL[p]}{p === "tiktok" ? " (ڕەشنووس)" : ""}</span>
+                <span>{PLATFORM_LABEL[p]}{p === "tiktok" ? " (ڕەشنووس)" : p === "instagram" ? " (ستۆری + کۆکراوەی شەو)" : ""}</span>
               </label>
             ))}
           </fieldset>

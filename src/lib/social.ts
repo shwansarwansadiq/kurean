@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { facebookFeed, facebookStory, facebookVideoStory, instagramFeed, instagramStory, instagramVideoStory, metaTargets } from "./meta";
+import { facebookFeed, facebookStory, facebookVideoStory, instagramStory, instagramVideoStory, metaTargets } from "./meta";
 import { renderCards } from "./render-card";
 
 export type SocialResult = { platform: string; kind: "feed" | "story"; ok: boolean; id?: string; error?: string };
@@ -52,7 +52,8 @@ export async function publishSocial(storyId: number, platforms: string[], kinds:
   let cards: Awaited<ReturnType<typeof renderCards>>;
   let targets: Awaited<ReturnType<typeof metaTargets>>;
   try {
-    [cards, targets] = await Promise.all([renderCards(storyId), metaTargets()]);
+    const formats = (["feed", "story"] as const).filter((f) => kinds.includes(f));
+    [cards, targets] = await Promise.all([renderCards(storyId, [...formats]), metaTargets()]);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     for (const p of wanted) for (const k of kinds) await save({ platform: p, kind: k, ok: false, error: msg });
@@ -60,7 +61,7 @@ export async function publishSocial(storyId: number, platforms: string[], kinds:
   }
 
   if (wanted.includes("instagram")) {
-    await attempt("instagram", "feed", () => instagramFeed(targets, cards.feed, cap.instagram));
+    // No Instagram feed photo per story (Shwan, 6 Nov): the day's stories go to the feed together at 21:00 (roundup.ts).
     await attempt("instagram", "story", () => instagramStory(targets, cards.story));
   }
   if (wanted.includes("facebook")) {

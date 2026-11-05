@@ -69,18 +69,35 @@ export async function facebookStory(t: MetaTargets, imageUrl: string): Promise<s
   return r.post_id ?? r.id ?? photo.id;
 }
 
-async function igPublish(t: MetaTargets, params: Record<string, string>, tries = 20, waitMs = 3000): Promise<string> {
-  if (!t.igId) throw new MetaError("No Instagram account is linked to the kurean Page");
-  const c = await graph<{ id: string }>(`${t.igId}/media`, { ...params, access_token: t.pageToken }, "POST");
-  // Instagram fetches and processes the image; wait until the container is ready.
+/** Instagram fetches and processes each file; wait until the container is ready. */
+async function igReady(t: MetaTargets, id: string, tries: number, waitMs: number): Promise<void> {
   for (let i = 0; i < tries; i++) {
-    const s = await graph<{ status_code?: string }>(c.id, { fields: "status_code", access_token: t.pageToken });
-    if (s.status_code === "FINISHED") break;
+    const s = await graph<{ status_code?: string }>(id, { fields: "status_code", access_token: t.pageToken });
+    if (s.status_code === "FINISHED") return;
     if (s.status_code === "ERROR" || s.status_code === "EXPIRED") throw new MetaError(`Instagram could not process the file (${s.status_code})`);
     await new Promise((r) => setTimeout(r, waitMs));
   }
+}
+
+async function igPublish(t: MetaTargets, params: Record<string, string>, tries = 20, waitMs = 3000): Promise<string> {
+  if (!t.igId) throw new MetaError("No Instagram account is linked to the kurean Page");
+  const c = await graph<{ id: string }>(`${t.igId}/media`, { ...params, access_token: t.pageToken }, "POST");
+  await igReady(t, c.id, tries, waitMs);
   const p = await graph<{ id: string }>(`${t.igId}/media_publish`, { creation_id: c.id, access_token: t.pageToken }, "POST");
   return p.id;
+}
+
+/** Up to 10 images (all the same shape) as one Instagram carousel post (the daily round-up). */
+export async function instagramCarousel(t: MetaTargets, imageUrls: string[], caption: string): Promise<string> {
+  if (!t.igId) throw new MetaError("No Instagram account is linked to the kurean Page");
+  if (imageUrls.length < 2 || imageUrls.length > 10) throw new MetaError(`A carousel needs 2-10 images (got ${imageUrls.length})`);
+  const children: string[] = [];
+  for (const url of imageUrls) {
+    const c = await graph<{ id: string }>(`${t.igId}/media`, { image_url: url, is_carousel_item: "true", access_token: t.pageToken }, "POST");
+    children.push(c.id);
+  }
+  for (const id of children) await igReady(t, id, 15, 3000);
+  return igPublish(t, { media_type: "CAROUSEL", children: children.join(","), caption });
 }
 
 export const instagramFeed = (t: MetaTargets, imageUrl: string, caption: string) => igPublish(t, { image_url: imageUrl, caption });

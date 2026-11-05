@@ -2,6 +2,7 @@ import { Composition } from "remotion";
 import { Chart, CHART_FRAMES, type ChartProps } from "./Chart";
 import { News, NEWS_FRAMES, type NewsProps } from "./News";
 import { Promo, PROMO_FRAMES } from "./Promo";
+import { Roundup, roundupFrames, type RoundupProps } from "./Roundup";
 import { Scenery, SCENERY_FRAMES, type SceneryProps } from "./Scenery";
 
 const sampleNews: NewsProps = {
@@ -37,12 +38,32 @@ const sampleScenery: SceneryProps = {
   music: "han-river",
 };
 
+const sampleRoundup: RoundupProps = {
+  dateLabel: "هەینی ٦ی تشرینی دووەم",
+  items: [
+    { headline: sampleNews.headline, image: "test.jpg", label: "دراما و فیلم", colour: "#9B7BEA" },
+    { headline: "دینۆی SEVENTEEN بە سینگڵێکی لەناکاو دێتەوە", image: null, label: "کەی-پۆپ", colour: "#E8508A" },
+    { headline: "فێستیڤاڵی گەڵا سوورەکانی سیئۆڵ دەستی پێکرد", image: "test.jpg", label: "کولتوور", colour: "#3FA88E" },
+  ],
+  music: "seoul-night",
+};
+
 export function Root() {
   return (
     <>
       <Composition id="News" component={News} durationInFrames={NEWS_FRAMES} fps={30} width={1080} height={1920} defaultProps={sampleNews} />
       <Composition id="Scenery" component={Scenery} durationInFrames={SCENERY_FRAMES} fps={30} width={1080} height={1920} defaultProps={sampleScenery} />
       <Composition id="Promo" component={Promo} durationInFrames={PROMO_FRAMES} fps={30} width={1080} height={1920} />
+      <Composition
+        id="Roundup"
+        component={Roundup}
+        durationInFrames={roundupFrames(3)}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={sampleRoundup}
+        calculateMetadata={({ props }) => ({ durationInFrames: roundupFrames(props.items.length) })}
+      />
       <Composition id="Chart" component={Chart} durationInFrames={CHART_FRAMES} fps={30} width={1080} height={1920} defaultProps={sampleChart} />
     </>
   );
