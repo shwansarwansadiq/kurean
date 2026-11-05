@@ -153,10 +153,13 @@ export const dayOfVideoId = (id: number) => {
  */
 export async function postRoundup(now = new Date()): Promise<boolean> {
   // Today's round-up, or yesterday's if its video is still due (a run just after midnight).
-  for (const day of [hawlerDay(now), hawlerDay(new Date(now.getTime() - 86_400_000))]) {
+  const today = hawlerDay(now);
+  for (const day of [today, hawlerDay(new Date(now.getTime() - 86_400_000))]) {
     const cutoff = cutoffOf(day);
     if (now < cutoff) continue;
     let row = await getRoundup(day);
+    // Yesterday only to finish what was started (its video); a missed day is never posted late.
+    if (day !== today && row?.status !== "video") continue;
     if (!row || row.status === "collecting") {
       const ids = (await roundupStories(day, cutoff)).map((s) => s.id);
       if (!row) {
