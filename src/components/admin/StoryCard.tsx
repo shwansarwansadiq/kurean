@@ -3,7 +3,7 @@ import Link from "next/link";
 import { findPhoto, publishStory, regenerateStory, scheduleStory, skipStory } from "@/app/admin/actions";
 import { Bidi } from "@/components/Bidi";
 import { isSensitive, photoStatus, PLATFORM_LABEL, PLATFORMS, type AdminStory } from "@/lib/admin-data";
-import { CATEGORY_META, ku, soraniDate } from "@/lib/site";
+import { CATEGORY_META, ku, paragraphs, soraniDate } from "@/lib/site";
 import { hawlerTime, toHawlerInput } from "@/lib/schedule";
 import { Submit } from "./Submit";
 
@@ -46,6 +46,18 @@ export function StoryCard({ story, nextSlot }: { story: AdminStory; nextSlot: Da
         <h2 id={`h-${story.id}`}>
           <Bidi text={story.headline} />
         </h2>
+        {/* The article exactly as the website will show it (Shwan, 17 Nov), so most stories need no Edit page. */}
+        <details className="card-body" open>
+          <summary>دەقی تەواوی هەواڵەکە لە ماڵپەڕ</summary>
+          <div className="card-body-text">
+            {paragraphs(story.body).map((p, i) => (
+              <p key={i}>
+                <Bidi text={p} />
+              </p>
+            ))}
+          </div>
+        </details>
+        <p className="card-points-h">خاڵەکانی ڤیدیۆ</p>
         <ul className="card-points">
           {story.key_points.map((k, i) => (
             <li key={i}>
