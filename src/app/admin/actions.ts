@@ -197,12 +197,27 @@ export async function toggleSource(form: FormData) {
 
 export async function saveTerm(form: FormData) {
   await requireAdmin();
+  const id = String(form.get("id") ?? "").trim();
   const english = String(form.get("english") ?? "").trim();
   const sorani = String(form.get("sorani") ?? "").trim();
   const note = String(form.get("note") ?? "").trim() || null;
-  if (!english || !sorani) return;
-  await db().from("glossary").upsert({ english, sorani, note, updated_at: new Date().toISOString() }, { onConflict: "english" });
+  if (!english || !sorani) redirect("/admin/glossary?m=empty");
+  const row = { english, sorani, note, updated_at: new Date().toISOString() };
+  // A row edited in place is changed by its id (its English word may change too); a new word is added or replaces
+  // the row with the same English word.
+  const { error } = id
+    ? await db().from("glossary").update(row).eq("id", id)
+    : await db().from("glossary").upsert(row, { onConflict: "english" });
   revalidatePath("/admin/glossary");
+  redirect(`/admin/glossary?m=${error ? (error.code === "23505" ? "dup" : "err") : "saved"}`);
+}
+
+export async function deleteTerm(form: FormData) {
+  await requireAdmin();
+  const id = String(form.get("id") ?? "").trim();
+  const { error } = id ? await db().from("glossary").delete().eq("id", id) : { error: null };
+  revalidatePath("/admin/glossary");
+  redirect(`/admin/glossary?m=${error ? "err" : "deleted"}`);
 }
 
 export async function findPhoto(form: FormData) {
