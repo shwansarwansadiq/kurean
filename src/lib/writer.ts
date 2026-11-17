@@ -44,6 +44,8 @@ export const MIN_SCORE = Number(process.env.KUREAN_MIN_SCORE ?? 7);
 /** Stories written per run, so one run stays well inside the time limit (the chain runs every 15 minutes). */
 const PER_RUN = 2;
 const URGENT_PER_RUN = 2;
+/** Scored reports are written only while they are this fresh (urgent ones are usually written within minutes). */
+export const FRESH_HOURS = Number(process.env.KUREAN_FRESH_HOURS ?? 36);
 
 /**
  * The daily limit spread over the day (Shwan, 17 Nov): by a given Hawler hour, only that share of the day's
@@ -276,11 +278,17 @@ export async function writeBest(now = new Date()): Promise<{ written: number; up
   const normalRoom = Math.min(PER_RUN, allowedSoFar(now) - (await storiesToday(false)));
   if (urgentRoom <= 0 && normalRoom <= 0) return { written: 0, updates: 0, failed: 0 };
 
+  // Old news isn't news: scored reports older than FRESH_HOURS are retired, so a high score from days ago never
+  // goes before today's news (Shwan, 17 Nov: news arrived late).
+  const freshSince = new Date(now.getTime() - FRESH_HOURS * 3600_000).toISOString();
+  await db().from("raw_items").update({ status: "skipped", score_reason: "too old to write" }).eq("status", "scored").lt("created_at", freshSince);
+
   // Take extra candidates: some turn out to be duplicates or too thin and are skipped.
   const { data, error } = await db()
     .from("raw_items")
     .select("id, url, title, summary, image_url, score_reason, urgent, source_id, sources(name, trust)")
     .eq("status", "scored")
+    .gte("created_at", freshSince)
     .order("urgent", { ascending: false })
     .order("score", { ascending: false })
     .order("published_at", { ascending: false })

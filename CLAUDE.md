@@ -56,7 +56,8 @@ write → photos. `?force=1` runs it at once. The old `/api/cron/collect` and `/
    announcements); ≥7 (urgent ≥6) becomes `scored`, else `skipped`.
 3. `writer.ts` → `writeBest` — urgent first (own reserve `KUREAN_URGENT_LIMIT` 10/day, 2 per run), then ordinary
    (`KUREAN_DAILY_LIMIT` 12/day **spread over the day**: `allowedSoFar`, 15 % at 07:00 Hawler rising to 100 % at 22:00;
-   2 per run). Items are claimed (`writing`, released after 15 min). **7-day repeat check** (`repeatCheck`, Haiku, live
+   2 per run). Only reports collected in the last 36 h are written (`KUREAN_FRESH_HOURS`; older `scored` ones are retired as
+   "too old to write" — a 291-item backlog was making news late). Items are claimed (`writing`, released after 15 min). **7-day repeat check** (`repeatCheck`, Haiku, live
    stories first): duplicate → skipped; update of a published story → `story_updates` (pending, `lib/updates.ts`);
    update of an unpublished story → folded in and rewritten; new → written into `stories` (status `pending`):
    headline, card_headline, body, 3 key_points, Instagram/Facebook/TikTok captions, hashtags, sources.
