@@ -213,7 +213,7 @@ function TopHundred() {
           <div dir="rtl" style={{ position: "relative", font: `900 54px/1.4 ${SORANI}`, color: "#fff", textAlign: "center" }}>
             هەموو ١٠٠ گۆرانییەکە
             <br />
-            لە کوریەندا لێبدە
+            لە کوریەندا لێ بدە
           </div>
         </div>
       </div>

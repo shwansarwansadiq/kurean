@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   if (!Number.isSafeInteger(id) || id <= 0) return NextResponse.json({ ok: true });
 
   // Answer at once (Telegram waits only a few seconds); publishing continues after the response.
-  const quick: Record<string, string> = { pub: "بڵاودەکرێتەوە…", sched: "دەخرێتە خشتەوە…", skip: "پشتگوێ خرا", upd: "زیاد دەکرێت…", updskip: "پشتگوێ خرا" };
+  const quick: Record<string, string> = { pub: "بڵاو دەکرێتەوە…", sched: "دەخرێتە خشتەوە…", skip: "پشتگوێ خرا", upd: "زیاد دەکرێت…", updskip: "پشتگوێ خرا" };
   await tg("answerCallbackQuery", { callback_query_id: q.id, text: quick[action] ?? "" }).catch(() => null);
 
   after(async () => {

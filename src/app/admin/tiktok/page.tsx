@@ -15,7 +15,7 @@ const caption = (s: AdminStory) =>
 
 const NOTICE: Record<string, string> = {
   connected: "تیکتۆک پەیوەست کرا. لەمەودوا ڤیدیۆی هەواڵە بڵاوکراوەکان وەک ڕەشنووس دەچنە ئینبۆکسی تیکتۆکەکەت.",
-  denied: "ڕێگەت نەدا. هەر کاتێک ویستت دووبارە پەیوەستی بکەوە.",
+  denied: "ڕێگەت نەدا. هەر کاتێک ویستت دووبارە پەیوەستی بکە.",
   "bad-state": "پەیوەستکردن تەواو نەبوو (ماوەکەی بەسەرچوو). دووبارە هەوڵ بدەوە.",
   failed: "تیکتۆک پەیوەست نەکرا. دووبارە هەوڵ بدەوە؛ ئەگەر دووبارە بوویەوە، پێم بڵێ.",
   "no-code": "تیکتۆک هیچ کۆدێکی نەناردەوە. دووبارە هەوڵ بدەوە.",
@@ -98,7 +98,7 @@ export default async function TikTok({ searchParams }: { searchParams: Promise<{
             </div>
           </li>
         ))}
-        {!stories.length ? <li className="rows-empty">هێشتا هیچ هەواڵێک بڵاونەکراوەتەوە.</li> : null}
+        {!stories.length ? <li className="rows-empty">هێشتا هیچ هەواڵێک بڵاو نەکراوەتەوە.</li> : null}
       </ul>
     </AdminShell>
   );

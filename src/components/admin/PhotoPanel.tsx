@@ -68,7 +68,7 @@ export function PhotoPanel({ story }: { story: AdminStory }) {
           ))}
         </ul>
       ) : (
-        <p className="adm-note">هیچ وێنەیەکی تر نەدۆزرایەوە. «گەڕانەوە لە سەرچاوەکان» تاقی بکەوە.</p>
+        <p className="adm-note">هیچ وێنەیەکی تر نەدۆزرایەوە. «گەڕانەوە لە سەرچاوەکان» تاقی بکەرەوە.</p>
       )}
 
       <div className="ph-head">

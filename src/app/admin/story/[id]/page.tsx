@@ -41,7 +41,7 @@ export default async function EditStory({ params, searchParams }: { params: Prom
             ) : null}
             <form action={remakeVideo}>
               <input type="hidden" name="id" value={story.id} />
-              <Submit className="btn small ghost" busy="…">{story.video_url ? "دووبارە دروستی بکەوە" : "ئێستا دروستی بکە"}</Submit>
+              <Submit className="btn small ghost" busy="…">{story.video_url ? "دووبارە دروستی بکە" : "ئێستا دروستی بکە"}</Submit>
             </form>
           </div>
         </figure>
@@ -101,7 +101,7 @@ export default async function EditStory({ params, searchParams }: { params: Prom
           <input type="hidden" name="id" value={story.id} />
           <input type="hidden" name="p_instagram" value="on" />
           <input type="hidden" name="p_facebook" value="on" />
-          <Submit className="btn pub" busy="بڵاودەکرێتەوە…">بڵاوی بکەوە (ماڵپەڕ، ئینستاگرام، فەیسبووک)</Submit>
+          <Submit className="btn pub" busy="بڵاو دەکرێتەوە…">بڵاوی بکەرەوە (ماڵپەڕ، ئینستاگرام، فەیسبووک)</Submit>
         </form>
       ) : null}
     </AdminShell>

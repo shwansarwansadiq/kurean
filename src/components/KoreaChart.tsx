@@ -147,7 +147,7 @@ export function KoreaChart({ week }: { week: ChartWeek | null }) {
           {queue.length ? (
             <a className="kc-all-btn" href={`https://www.youtube.com/watch?v=${queue[0].yt}`} data-yt-all="" target="_blank" rel="noopener">
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" /></svg>
-              هەموو ڕیزبەندییەکە لێبدە
+              هەموو ڕیزبەندییەکە لێ بدە
               <small>{ku(queue.length)} گۆرانی</small>
             </a>
           ) : null}

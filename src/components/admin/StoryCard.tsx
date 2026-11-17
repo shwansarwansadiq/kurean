@@ -76,8 +76,8 @@ export function StoryCard({ story, nextSlot }: { story: AdminStory; nextSlot: Da
             ))}
           </fieldset>
           <div className="when">
-            <Submit className="btn pub" busy="بڵاودەکرێتەوە… (تا یەک خولەک)" name="mode" value="now">
-              ئێستا بڵاوی بکەوە
+            <Submit className="btn pub" busy="بڵاو دەکرێتەوە… (تا یەک خولەک)" name="mode" value="now">
+              ئێستا بڵاوی بکەرەوە
             </Submit>
             <Submit className="btn sched" busy="دەخرێتە خشتەوە…" formAction={scheduleStory} name="mode" value="next">
               بیخە خشتەوە · <span className="lat">{ku(hawlerTime(nextSlot))}</span>

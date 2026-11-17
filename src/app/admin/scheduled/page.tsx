@@ -35,7 +35,7 @@ export default async function Scheduled() {
     <AdminShell active="scheduled" title="خشتەی بڵاوکردنەوە">
       <div className="sched-top">
         <p className="adm-note">
-          هەواڵە پەسەندکراوەکان لە کاتی خۆیاندا خۆیان بڵاودەبنەوە (ماڵپەڕ و ئەو پلاتفۆرمانەی هەڵتبژاردوون). کاتی بڵاوکردنەوە: لە{" "}
+          هەواڵە پەسەندکراوەکان لە کاتی خۆیاندا خۆیان بڵاو دەبنەوە (ماڵپەڕ و ئەو پلاتفۆرمانەی هەڵتبژاردوون). کاتی بڵاوکردنەوە: لە{" "}
           {ku(String(WINDOW_START_H).padStart(2, "0"))}:٠٠ تا {ku(WINDOW_END_H)}:٠٠ی هەولێر، لانیکەم یەک کاتژمێر لە نێوانیاندا.
         </p>
         {rows.length > 1 ? (

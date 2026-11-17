@@ -122,6 +122,10 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
 - Glossary spellings are mandatory (table `glossary`; the plan doc's Glossary tab is the human-edited copy).
   Example: fandom → کۆمەڵەی هەواداران in articles, فاندۆم allowed in casual captions.
 - Tone: friendly, well-informed fan friend, accurate. No emoji in headlines or body; 1–3 in captions.
+- **Grammar (Shwan, 17 Nov): read `docs/kurdish-grammar.md` before writing any Kurdish copy** (site, dashboard,
+  Telegram, cards, videos, captions, prompts). It follows the Kurdish Academy grammar and Marf's noun morphology:
+  compound verbs as two words (بڵاو دەکرێتەوە), بکەرەوە not بکەوە, singular noun after a number, ی doubling
+  (گۆرانییەکە), izafe ‑ی after vowels too.
 
 ## Brand
 

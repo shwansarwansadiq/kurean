@@ -16,12 +16,12 @@ async function RoundupStatus() {
     : await roundupStories(day, new Date(Math.min(Date.now(), cutoffOf(day).getTime()))).catch(() => []);
   const state =
     !row || row.status === "collecting"
-      ? `کاتژمێر ${ku(ROUNDUP_HOUR)}:٠٠ بڵاودەبێتەوە${row?.video_url ? " · ڤیدیۆکەی ئامادەیە" : ""}`
+      ? `کاتژمێر ${ku(ROUNDUP_HOUR)}:٠٠ بڵاو دەبێتەوە${row?.video_url ? " · ڤیدیۆکەی ئامادەیە" : ""}`
       : row.status === "empty"
-        ? "ئەمڕۆ هیچ هەواڵێک بۆ ئینستاگرام بڵاونەکرایەوە"
+        ? "ئەمڕۆ هیچ هەواڵێک بۆ ئینستاگرام بڵاو نەکرایەوە"
         : row.status === "done"
           ? "بڵاوکرایەوە"
-          : "بڵاودەکرێتەوە…";
+          : "بڵاو دەکرێتەوە…";
   const results = [row?.carousel_result, row?.story_result, row?.reel_result].filter(Boolean).join(" · ");
   return (
     <section className="roundup-box">
@@ -105,7 +105,7 @@ export default async function Published() {
             </form>
           </li>
         ))}
-        {!published.length ? <li className="rows-empty">هێشتا هیچ هەواڵێک بڵاونەکراوەتەوە.</li> : null}
+        {!published.length ? <li className="rows-empty">هێشتا هیچ هەواڵێک بڵاو نەکراوەتەوە.</li> : null}
       </ul>
       <h2 className="adm-h2">پەڕێنراوەکان ({ku(skipped.length)})</h2>
       <ul className="rows muted">
