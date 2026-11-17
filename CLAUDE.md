@@ -125,7 +125,8 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
 - **Grammar (Shwan, 17 Nov): read `docs/kurdish-grammar.md` before writing any Kurdish copy** (site, dashboard,
   Telegram, cards, videos, captions, prompts). It follows the Kurdish Academy grammar and Marf's noun morphology:
   compound verbs as two words (بڵاو دەکرێتەوە), بکەرەوە not بکەوە, singular noun after a number, ی doubling
-  (گۆرانییەکە), izafe ‑ی after vowels too.
+  (گۆرانییەکە), izafe ‑ی after vowels too. The writer's prompts carry the same rules (`SORANI_GRAMMAR` in
+  `prompts.ts`, used by stories, live stories, the weekly chart story and updates); keep it in step with the doc.
 
 ## Brand
 

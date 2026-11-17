@@ -77,10 +77,28 @@ export function glossaryBlock(terms: GlossaryTerm[]): string {
   return terms.map((t) => `- ${t.english} → ${t.sorani}${t.note ? ` (${t.note})` : ""}`).join("\n");
 }
 
+/** Sorani grammar and spelling (Shwan, 17 Nov), from docs/kurdish-grammar.md: Kurdish Academy grammar + Marf. */
+export const SORANI_GRAMMAR = `Sorani grammar and spelling (Kurdish Academy standard; follow exactly):
+- Alphabet: ئ before an initial vowel (ئەم، ئێوە); ە for the short vowel; وو for long u (نووسەر، بوو); ێ، ۆ، ڕ، ڵ with their marks.
+- Compound verbs are two words: بڵاو کردەوە، بڵاو دەکرێتەوە، بڵاو نەکرایەوە، دەست پێ دەکات، ڕای گەیاند. Verbal nouns may be one word (بڵاوکردنەوە).
+- Definite ‑ەکە/‑ەکان, indefinite ‑ێک (‑یەک after a vowel). After ی the ی doubles: گۆرانییەکە، گۆرانییەک، ستۆرییەکان. After ە they merge: سەرچاوەکە. After ا/ۆ/ێ: چراکە.
+- Noun + adjective: definiteness on the adjective, linking ‑ە on the noun: گۆرانییە نوێیەکە، ئەلبوومە تازەکەیان.
+- Izafe is ‑ی after consonants and vowels alike: ئەلبوومی نوێ، دراماکەی، کۆنسێرتی گرووپەکە. After a final ی it doubles: گۆرانیی نوێ.
+- After a number or چەند/هەر the noun stays singular: سێ ئەندام، چوار گۆرانی، ١٠ ڕۆژ (never «سێ ئەندامان»); definite: سێ ئەندامەکەی گرووپەکە.
+- Plural ‑ان / ‑ەکان (with y after a vowel: هەواداران، گۆرانییەکان); avoid the Arabic plural ‑ات.
+- Past tense of a transitive verb is ergative: the doer is a clitic ‑م/‑ت/‑ی/‑مان/‑تان/‑یان on the first element: گرووپەکە ئەلبوومێکی نوێیان بڵاو کردەوە، ئاژانسەکە ڕایگەیاند. Intransitive takes verb endings: گرووپەکە گەڕایەوە.
+- Written endings: 3rd person present ‑ێت (دەچێت), ‑ات after a vowel stem (دەکات، دەبات); 2nd person ‑یت.
+- Negation: نا‑ present, نە‑ past, on the verb part of a compound verb (بڵاو نەکرایەوە).
+- Prefer the active voice with the named source (ئاژانسی یۆنهاپ ڕایگەیاند) over the passive (ڕاگەیەنرا) when the source is known.
+- Prepositions: بە، لە، بۆ، تا، لەگەڵ، وەک؛ circumpositions لە…دا (لە سیئۆڵدا) and لە…ەوە; absolute forms apart: لێی پرسی، پێی وت.
+- Questions end with ؟. Use Kurdish punctuation ، and ؛.`;
+
 export function writeSystem(terms: GlossaryTerm[]): string {
   return `You are the writer for Kurean (کوریەن), a Sorani Kurdish news site about Korean culture for fans aged 15-30.
 
 Write in standard Sorani Kurdish (Arabic script), clear and friendly, like a well-informed fan friend, but accurate.
+
+${SORANI_GRAMMAR}
 
 Hard rules:
 1. Write a NEW article from the facts. Never translate the source sentence by sentence and never copy its paragraphs. At most one short quote, attributed.
@@ -239,7 +257,9 @@ Rules: standard Sorani (Arabic script); names in Latin letters as in the story; 
 rumours never as facts; no emoji; never mention the source text or what is missing.
 Glossary spellings:
 ${glossaryBlock(terms)}
-text: 1-3 short sentences. card: the update in at most 9 words for an image card.`;
+text: 1-3 short sentences. card: the update in at most 9 words for an image card.
+
+${SORANI_GRAMMAR}`;
 }
 
 export const UpdateSchema = z.object({ text: z.string().min(10).max(700), card: z.string().min(3).max(90) });
