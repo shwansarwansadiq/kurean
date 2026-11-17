@@ -360,3 +360,72 @@ export async function remakeVideo(form: FormData) {
   revalidatePath("/admin/published");
   revalidatePath("/admin/tiktok");
 }
+
+/** Updates to published stories (live stories): approve = add to the article and post the update card. */
+export async function approveUpdate(form: FormData) {
+  await requireAdmin();
+  const { publishUpdate } = await import("@/lib/updates");
+  await publishUpdate(idOf(form));
+  refreshSite();
+  revalidatePath("/admin");
+}
+
+export async function skipUpdateAction(form: FormData) {
+  await requireAdmin();
+  const { skipUpdate } = await import("@/lib/updates");
+  await skipUpdate(idOf(form));
+  revalidatePath("/admin");
+}
+
+/** The awards calendar: add or change an event (times typed in Hawler time). */
+export async function saveEvent(form: FormData) {
+  await requireAdmin();
+  const starts = fromHawlerInput(String(form.get("starts") ?? ""));
+  const ends = fromHawlerInput(String(form.get("ends") ?? ""));
+  const name = String(form.get("name") ?? "").trim();
+  const name_ckb = String(form.get("name_ckb") ?? "").trim() || name;
+  if (!starts || !ends || !name || ends <= starts) return;
+  const row = {
+    name,
+    name_ckb,
+    kind: form.get("kind") === "festival" ? "festival" : "awards",
+    starts_at: starts.toISOString(),
+    ends_at: ends.toISOString(),
+    place: String(form.get("place") ?? "").trim() || null,
+  };
+  const id = Number(form.get("id"));
+  if (Number.isSafeInteger(id) && id > 0) await db().from("events").update(row).eq("id", id);
+  else await db().from("events").insert(row);
+  revalidatePath("/admin/events");
+}
+
+export async function deleteEvent(form: FormData) {
+  await requireAdmin();
+  await db().from("events").delete().eq("id", idOf(form));
+  revalidatePath("/admin/events");
+}
+
+/** Telegram: point the bot at the site, or send a test message. */
+export async function telegramConnect(): Promise<void> {
+  await requireAdmin();
+  const { connectWebhook } = await import("@/lib/telegram");
+  try {
+    const bot = await connectWebhook();
+    redirect(`/admin/telegram?ok=${encodeURIComponent(bot)}`);
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e; // the redirect itself
+    redirect(`/admin/telegram?err=${encodeURIComponent(e instanceof Error ? e.message : String(e))}`);
+  }
+}
+
+export async function telegramTest(): Promise<void> {
+  await requireAdmin();
+  const { tg, telegramOn } = await import("@/lib/telegram");
+  if (!telegramOn()) redirect("/admin/telegram?err=no-keys");
+  try {
+    await tg("sendMessage", { chat_id: process.env.TELEGRAM_CHAT_ID!.trim(), text: "کوریەن: تاقیکردنەوە ✅ ئاگادارکردنەوەکان کار دەکەن." });
+  } catch (e) {
+    redirect(`/admin/telegram?err=${encodeURIComponent(e instanceof Error ? e.message : String(e))}`);
+  }
+  redirect("/admin/telegram?sent=1");
+}

@@ -105,3 +105,7 @@
 .re-link { font-size: 54px; padding: 28px 52px; margin-top: 16px; }
 .re-follow { margin: 8px 0 0; font-weight: 800; font-size: 36px; color: var(--gold); }
 .re-follow .lat { font: 700 36px/1 var(--latin); }
+
+/* Live update card: the update leads, the story it belongs to above it */
+.sc-live { background: var(--berry); color: #fff; border: 3px solid rgb(255 255 255 / 0.5); }
+.sc-was { margin: 0 0 14px; font-weight: 700; font-size: 34px; line-height: 1.5; color: rgb(255 255 255 / 0.72); }

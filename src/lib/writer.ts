@@ -1,14 +1,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db, type GlossaryTerm, type Source } from "./db";
-import { hawlerMidnight } from "./schedule";
+import { HAWLER_OFFSET_MS, hawlerMidnight } from "./schedule";
 import { attachPhoto, sourcePhotoCandidates, type PhotoCandidate } from "./photo";
-import { needsSecondSource, primaryReport, relatedCandidates, totalSourceChars, type Report } from "./cluster";
+import { needsSecondSource, primaryReport, relatedCandidates, significantTokens, totalSourceChars, type Report } from "./cluster";
 import {
   CATEGORIES,
   SAME_STORY_SYSTEM,
   SAME_STORY_TOOL,
   SameStorySchema,
   sameStoryUserMessage,
+  REPEAT_SYSTEM,
+  REPEAT_TOOL,
+  RepeatSchema,
+  repeatUserMessage,
   SCORE_SYSTEM,
   SCORE_TOOL,
   ScoreSchema,
@@ -31,12 +35,26 @@ export function parseScoreReason(reason: string): { category: Category; sensitiv
 export const SCORE_MODEL = process.env.KUREAN_SCORE_MODEL ?? "claude-haiku-5-5";
 export const WRITE_MODEL = process.env.KUREAN_WRITE_MODEL ?? "claude-sonnet-5-5";
 
-/** Stories prepared per day, counted from midnight in Hawler (Shwan raised it from 8 to 12 on 30 Oct). */
+/** Ordinary stories prepared per day, counted from midnight in Hawler (Shwan raised it from 8 to 12 on 30 Oct). */
 export const DAILY_LIMIT = Number(process.env.KUREAN_DAILY_LIMIT ?? 12);
+/** Urgent stories (results, official announcements) have their own reserve on top (Shwan, 17 Nov). */
+export const URGENT_LIMIT = Number(process.env.KUREAN_URGENT_LIMIT ?? 10);
 /** Lowest score worth writing. */
 export const MIN_SCORE = Number(process.env.KUREAN_MIN_SCORE ?? 7);
-/** Stories written per run, so one run stays well inside the time limit. */
+/** Stories written per run, so one run stays well inside the time limit (the chain runs every 15 minutes). */
 const PER_RUN = 2;
+const URGENT_PER_RUN = 2;
+
+/**
+ * The daily limit spread over the day (Shwan, 17 Nov): by a given Hawler hour, only that share of the day's
+ * ordinary stories may be written, so the evening (when Korean awards and shows happen) never finds it used up.
+ * 07:00 → 15 %, rising evenly to 100 % at 22:00.
+ */
+export function allowedSoFar(now = new Date(), limit = DAILY_LIMIT): number {
+  const h = (now.getTime() + HAWLER_OFFSET_MS) % 86_400_000 / 3600_000;
+  const share = Math.min(1, Math.max(0.15, (h - 7) / 15));
+  return Math.max(1, Math.ceil(limit * share));
+}
 
 let anthropic: Anthropic | null = null;
 function ai(): Anthropic {
@@ -116,8 +134,10 @@ export async function scoreNew(): Promise<number> {
     await db()
       .from("raw_items")
       .update({
-        status: s.score >= MIN_SCORE ? "scored" : "skipped",
+        // An urgent item is worth writing a notch lower: results matter even for less famous names.
+        status: s.score >= MIN_SCORE || (s.urgent && s.score >= MIN_SCORE - 1) ? "scored" : "skipped",
         score: s.score,
+        urgent: s.urgent,
         score_reason: `${s.category}${s.sensitive ? " · sensitive" : ""} · ${s.reason}`,
       })
       .eq("id", item.id);
@@ -171,16 +191,66 @@ const toReport = (r: ItemRow): Report => ({
   summary: r.summary,
 });
 
-/** News stories written since midnight in Hawler (the weekly chart story does not count). */
-async function storiesToday(): Promise<number> {
+/** Stories written since midnight in Hawler: ordinary ones and urgent ones (chart and live event stories don't count). */
+async function storiesToday(urgent: boolean): Promise<number> {
   const start = hawlerMidnight(new Date());
   const { count, error } = await db()
     .from("stories")
     .select("id", { count: "exact", head: true })
     .gte("created_at", start.toISOString())
-    .neq("kind", "chart");
+    .eq("kind", "news")
+    .is("event_id", null)
+    .eq("urgent", urgent);
   if (error) throw error;
   return count ?? 0;
+}
+
+type RecentStory = { id: number; status: string; headline: string; body: string; live_until: string | null; sources: { name: string; url: string }[] };
+
+/**
+ * The 7-day repeat check (Shwan, 17 Nov): is this report a story we already have, news to add to one, or new?
+ * A cheap word match picks up to 8 recent stories (titles of the reports they were written from, plus live
+ * event stories); the model decides. Names spelled differently are matched by the model.
+ */
+async function repeatCheck(item: ItemRow): Promise<{ decision: "new" | "update" | "duplicate"; story?: RecentStory }> {
+  const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const { data } = await db()
+    .from("stories")
+    .select("id, status, headline, body, live_until, sources")
+    .in("status", ["pending", "approved", "published"])
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(120);
+  const stories = (data ?? []) as RecentStory[];
+  if (!stories.length) return { decision: "new" };
+  const urls = stories.flatMap((st) => st.sources.map((x) => x.url));
+  const { data: raws } = await db().from("raw_items").select("url, title").in("url", urls.slice(0, 400));
+  const titleOf = new Map((raws ?? []).map((r: { url: string; title: string }) => [r.url, r.title]));
+  const target = significantTokens(item.title);
+  const now = Date.now();
+  const scored = stories
+    .map((st) => {
+      const titles = st.sources.map((x) => titleOf.get(x.url)).filter(Boolean) as string[];
+      let shared = 0;
+      for (const t of significantTokens(`${titles.join(" ")} ${st.headline}`)) if (target.has(t)) shared++;
+      const live = !!st.live_until && new Date(st.live_until).getTime() > now;
+      return { st, titles, shared, live };
+    })
+    .filter((x) => x.shared >= 1 || x.live)
+    .sort((a, b) => Number(b.live) - Number(a.live) || b.shared - a.shared)
+    .slice(0, 8);
+  if (!scored.length) return { decision: "new" };
+  const out = await callTool({
+    model: SCORE_MODEL,
+    system: REPEAT_SYSTEM,
+    user: repeatUserMessage(item, scored.map((x) => ({ headline: x.st.headline, reports: x.titles, live: x.live }))),
+    tool: REPEAT_TOOL,
+    maxTokens: 400,
+    parse: (x) => RepeatSchema.parse(x),
+  });
+  const story = out.story !== null ? scored[out.story]?.st : undefined;
+  if (out.decision !== "new" && !story) return { decision: "new" };
+  return { decision: out.decision, story };
 }
 
 export async function glossary(): Promise<GlossaryTerm[]> {
@@ -189,36 +259,70 @@ export async function glossary(): Promise<GlossaryTerm[]> {
   return (data ?? []) as GlossaryTerm[];
 }
 
-/** Writes the best scored items into stories, within the daily limit. */
-export async function writeBest(): Promise<{ written: number; failed: number }> {
-  const room = Math.min(PER_RUN, DAILY_LIMIT - (await storiesToday()));
-  if (room <= 0) return { written: 0, failed: 0 };
+/**
+ * Writes the best scored items into stories: urgent ones first (their own daily reserve), then ordinary ones
+ * within the share of the day's limit allowed so far. Each report is first checked against the last 7 days:
+ * a duplicate is skipped, an update to a published story waits for approval as an update, an update to a story
+ * not yet published is folded into it.
+ */
+export async function writeBest(now = new Date()): Promise<{ written: number; updates: number; failed: number }> {
+  // A run that died mid-write leaves its claim behind: give such reports back after 15 minutes.
+  await db()
+    .from("raw_items")
+    .update({ status: "scored" })
+    .eq("status", "writing")
+    .lt("claimed_at", new Date(now.getTime() - 15 * 60_000).toISOString());
+  const urgentRoom = Math.min(URGENT_PER_RUN, URGENT_LIMIT - (await storiesToday(true)));
+  const normalRoom = Math.min(PER_RUN, allowedSoFar(now) - (await storiesToday(false)));
+  if (urgentRoom <= 0 && normalRoom <= 0) return { written: 0, updates: 0, failed: 0 };
 
   // Take extra candidates: some turn out to be duplicates or too thin and are skipped.
   const { data, error } = await db()
     .from("raw_items")
-    .select("id, url, title, summary, image_url, score_reason, source_id, sources(name, trust)")
+    .select("id, url, title, summary, image_url, score_reason, urgent, source_id, sources(name, trust)")
     .eq("status", "scored")
+    .order("urgent", { ascending: false })
     .order("score", { ascending: false })
     .order("published_at", { ascending: false })
-    .limit(room * 4);
+    .limit(16);
   if (error) throw error;
-  const items = (data ?? []) as unknown as (ItemRow & { score_reason: string; source_id: string })[];
-  if (!items.length) return { written: 0, failed: 0 };
+  const items = (data ?? []) as unknown as (ItemRow & { score_reason: string; source_id: string; urgent: boolean })[];
+  if (!items.length) return { written: 0, updates: 0, failed: 0 };
 
   const terms = await glossary();
   const handled = new Set<string>();
+  let urgentLeft = Math.max(0, urgentRoom);
+  let normalLeft = Math.max(0, normalRoom);
   let written = 0;
+  let updates = 0;
   let failed = 0;
 
   for (const item of items) {
-    if (written >= room) break;
+    if (urgentLeft + normalLeft <= 0) break;
     if (handled.has(item.id)) continue;
+    // An urgent item with no urgent room left waits for ordinary room; an ordinary one never uses the urgent reserve.
+    const asUrgent = item.urgent && urgentLeft > 0;
+    if (!asUrgent && normalLeft <= 0) continue;
     handled.add(item.id);
+    // Claim it, so two overlapping runs never write the same report.
+    const { data: claimed } = await db().from("raw_items").update({ status: "writing", claimed_at: new Date().toISOString() }).eq("id", item.id).eq("status", "scored").select("id");
+    if (!claimed?.length) continue;
     const { category, sensitive } = parseScoreReason(item.score_reason);
     try {
-      const same = await findSameStory(item);
+      const repeat = await repeatCheck(item);
+      if (repeat.decision === "duplicate") {
+        await db().from("raw_items").update({ status: "skipped", score_reason: `${item.score_reason} · already covered (#${repeat.story?.id})` }).eq("id", item.id);
+        continue;
+      }
+      if (repeat.decision === "update" && repeat.story) {
+        const { addUpdate } = await import("./updates");
+        const done = await addUpdate(repeat.story, item, terms);
+        await db().from("raw_items").update({ status: done ? "written" : "skipped", score_reason: `${item.score_reason} · update of #${repeat.story.id}` }).eq("id", item.id);
+        if (done) updates++;
+        continue;
+      }
 
+      const same = await findSameStory(item);
       // Another source's report of this news is already in a story: don't write it twice.
       if (same.some((s) => s.status === "written")) {
         await db().from("raw_items").update({ status: "skipped", score_reason: `${item.score_reason} · already covered` }).eq("id", item.id);
@@ -247,6 +351,7 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
         raw_item_id: item.id,
         category,
         ...story,
+        urgent: asUrgent,
         source_name: primary.source,
         source_url: primary.url,
         sources: ordered.map((r) => ({ name: r.source, url: r.url, trust: r.trust })),
@@ -265,6 +370,10 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
       ids.forEach((id) => handled.add(id));
       await db().from("raw_items").update({ status: "written" }).in("id", ids);
       written++;
+      if (asUrgent) urgentLeft--;
+      else normalLeft--;
+      // Tell Shwan on his phone, with one-tap buttons.
+      await import("./telegram").then((t) => t.alertStory(inserted.id)).catch((e) => console.error("telegram", e));
     } catch (e) {
       console.error("write failed", item.id, e);
       await db().from("raw_items").update({ status: "failed" }).eq("id", item.id);
@@ -272,7 +381,7 @@ export async function writeBest(): Promise<{ written: number; failed: number }> 
     }
   }
   if (written) await import("./video").then((v) => v.kickVideos()).catch(() => false);
-  return { written, failed };
+  return { written, updates, failed };
 }
 
 const photoCandidate = (r: ItemRow): PhotoCandidate => ({ image_url: r.image_url ?? null, url: r.url, source: r.sources.name });

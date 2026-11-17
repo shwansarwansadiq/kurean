@@ -203,6 +203,18 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .art-head h1 { font-weight: 900; font-size: clamp(26px, 6.6vw, 38px); line-height: 1.6; }
 .byline { margin: 10px 0 0; font-size: 13px; color: var(--ink-2); }
 .art-body { padding: 10px var(--gutter) 0; font-size: 17.5px; line-height: 2.1; }
+/* Live stories: a badge in the byline, approved updates newest first above the article */
+.live-badge { display: inline-flex; align-items: center; gap: 6px; margin-inline-end: 8px; padding: 2px 10px 3px; border-radius: 999px;
+  background: var(--berry); color: #fff; font-weight: 800; font-size: 12px; }
+.live-badge i { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: live-pulse 1.6s ease-in-out infinite; }
+@keyframes live-pulse { 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .live-badge i { animation: none; } }
+.art-updates { margin: 14px var(--gutter) 0; padding: 12px 16px; border-radius: 16px; background: var(--blush); border: 1px solid rgb(232 80 138 / 0.25); }
+.art-updates h2 { margin: 0 0 6px; font-size: 14px; color: var(--berry); }
+.art-updates ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.art-updates li { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; }
+.art-updates time { font: 700 13px/1 var(--latin); color: var(--berry); direction: ltr; }
+.art-updates p { margin: 0; font-size: 16px; line-height: 1.9; }
 .art-body p { margin: 0 0 1.05em; }
 .art-body .lat { font-weight: 600; }
 .gallery { display: grid; gap: 12px; padding: 4px var(--gutter) 6px; }

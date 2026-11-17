@@ -19,6 +19,9 @@ Score each headline 0-10 for how much these readers would want it:
 - 5-7: solid news about popular groups, actors or shows; Korean food, fashion, beauty, travel with broad appeal.
 - 0-4: niche business, politics, sports, minor celebrity gossip, ads, listicles, quizzes, opinion pieces, anything not about Korea.
 Also flag sensitive stories: dating rumours, health, deaths, legal cases, scandals.
+Flag urgent (true) only for news that fans want within the hour: award winners and results, ceremony highlights as they
+happen, a comeback/debut/release date or tour just announced officially, confirmed dating/marriage/enlistment/discharge,
+a confirmed death, major breaking news in Korea. Teasers, photos, interviews, features and reviews are not urgent.
 Assign each item one category: kpop, kdrama_film, culture or korea_news.`;
 
 export const ScoreSchema = z.object({
@@ -28,6 +31,7 @@ export const ScoreSchema = z.object({
       score: z.number().int().min(0).max(10),
       category: z.enum(CATEGORIES),
       sensitive: z.boolean(),
+      urgent: z.boolean().default(false),
       reason: z.string(),
     }),
   ),
@@ -49,9 +53,10 @@ export const SCORE_TOOL = {
             score: { type: "integer", minimum: 0, maximum: 10 },
             category: { type: "string", enum: [...CATEGORIES] },
             sensitive: { type: "boolean" },
+            urgent: { type: "boolean", description: "Fans want it within the hour (results, official announcements)" },
             reason: { type: "string", description: "Under 15 words, English" },
           },
-          required: ["index", "score", "category", "sensitive", "reason"],
+          required: ["index", "score", "category", "sensitive", "urgent", "reason"],
         },
       },
     },
@@ -183,4 +188,96 @@ export function sameStoryUserMessage(
 
 Candidates:
 ${candidates.map((c, i) => `[${i}] (${c.source}) ${c.title}${clip(c.summary)}`).join("\n")}`;
+}
+
+/* ---------- Repeat check against the last 7 days of stories ---------- */
+
+export const REPEAT_SYSTEM = `You keep a news site from repeating itself. Given one new report and a numbered list of
+stories the site already has (with the reports they were written from), decide:
+- "duplicate": an existing story already says what this report says (same event, no meaningful new fact).
+- "update": it is the same event or an ongoing one (an awards night, a tour, a case) and the report adds a NEW
+  confirmed fact worth telling readers (a winner, a result, a date, an official statement). Give that story's number.
+- "new": a different piece of news. Related news about the same artist (another song, another show) is "new".
+Names may be spelled differently (Lim Young-woong / Lim Youngwoong, Jisoo / JISOO): treat them as the same person.`;
+
+export const RepeatSchema = z.object({
+  decision: z.enum(["new", "update", "duplicate"]),
+  story: z.number().int().nullable().default(null),
+  reason: z.string().default(""),
+});
+
+export const REPEAT_TOOL = {
+  name: "record_decision",
+  description: "Record whether the report is new, an update to an existing story, or a duplicate.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      decision: { type: "string", enum: ["new", "update", "duplicate"] },
+      story: { type: ["integer", "null"], description: "The existing story's number for update or duplicate" },
+      reason: { type: "string", description: "Under 15 words, English" },
+    },
+    required: ["decision", "story", "reason"],
+  },
+};
+
+export function repeatUserMessage(
+  report: { title: string; summary: string | null },
+  stories: { headline: string; reports: string[]; live: boolean }[],
+): string {
+  return `New report: ${report.title}${report.summary ? `\n    ${report.summary.slice(0, 400)}` : ""}
+
+Existing stories:
+${stories.map((s, i) => `[${i}]${s.live ? " (LIVE event story)" : ""} ${s.headline}\n    from: ${s.reports.slice(0, 3).join(" | ")}`).join("\n")}`;
+}
+
+/* ---------- Writing an update to a published story ---------- */
+
+export function updateSystem(terms: GlossaryTerm[]): string {
+  return `You write short updates for Kurean (کوریەن), a Sorani Kurdish news site about Korean culture.
+A story is already published; write only the NEW facts from the new report as an update.
+Rules: standard Sorani (Arabic script); names in Latin letters as in the story; use only facts in the new report;
+rumours never as facts; no emoji; never mention the source text or what is missing.
+Glossary spellings:
+${glossaryBlock(terms)}
+text: 1-3 short sentences. card: the update in at most 9 words for an image card.`;
+}
+
+export const UpdateSchema = z.object({ text: z.string().min(10).max(700), card: z.string().min(3).max(90) });
+
+export const UPDATE_TOOL = {
+  name: "save_update",
+  description: "Save the Sorani update.",
+  input_schema: {
+    type: "object" as const,
+    properties: { text: { type: "string" }, card: { type: "string" } },
+    required: ["text", "card"],
+  },
+};
+
+export function updateUserMessage(story: { headline: string; body: string }, report: { source: string; title: string; summary: string | null }): string {
+  return `Published story: ${story.headline}
+${story.body.slice(0, 1500)}
+
+New report — ${report.source}
+Headline: ${report.title}
+Text: ${report.summary?.trim() || "(headline only)"}`;
+}
+
+/* ---------- The live story opened before an awards night ---------- */
+
+export function liveSystem(terms: GlossaryTerm[]): string {
+  return `${writeSystem(terms)}
+
+This is a LIVE event story written before the event starts, from the event facts only (name, date, time, place).
+Say what the event is and that this page will be updated with the winners and highlights as they are announced.
+Do not guess nominees, performers or winners. Body 60-150 words is fine for this story.`;
+}
+
+export function liveUserMessage(e: { category: (typeof CATEGORIES)[number]; name: string; place: string | null; startsKst: string; startsHawler: string; source: string }): string {
+  return `Category: ${CATEGORY_LABELS[e.category]}
+Source names for the captions: ${e.source}
+
+Event: ${e.name}
+Place: ${e.place ?? "(not given)"}
+Starts: ${e.startsKst} Korea time (${e.startsHawler} Hawler time)`;
 }

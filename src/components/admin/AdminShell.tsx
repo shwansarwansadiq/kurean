@@ -7,6 +7,7 @@ import { ku } from "@/lib/site";
 const TABS = [
   { href: "/admin", key: "pending", label: "چاوەڕوان" },
   { href: "/admin/scheduled", key: "scheduled", label: "خشتە" },
+  { href: "/admin/events", key: "events", label: "ئاهەنگەکان" },
   { href: "/admin/published", key: "published", label: "بڵاوکراوە" },
   { href: "/admin/analytics", key: "analytics", label: "شیکاری" },
   { href: "/admin/tiktok", key: "tiktok", label: "تیکتۆک" },
@@ -14,6 +15,7 @@ const TABS = [
   { href: "/admin/stickers", key: "stickers", label: "ستیکەر" },
   { href: "/admin/sources", key: "sources", label: "سەرچاوەکان" },
   { href: "/admin/glossary", key: "glossary", label: "فەرهەنگ" },
+  { href: "/admin/telegram", key: "telegram", label: "تێلێگرام" },
 ] as const;
 
 export async function AdminShell({ active, title, children }: { active: (typeof TABS)[number]["key"]; title: string; children: React.ReactNode }) {

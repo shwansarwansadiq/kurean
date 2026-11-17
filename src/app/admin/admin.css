@@ -289,3 +289,25 @@
 .roundup-box p { margin: 0; font-size: 13px; line-height: 1.8; color: var(--ink-2); }
 .roundup-box ol { margin: 6px 0 0; padding-inline-start: 22px; font-size: 13px; line-height: 1.8; }
 .roundup-box .social { margin-top: 6px; font-size: 12px; word-break: break-word; }
+
+/* Urgent / live flag on queue cards, and updates waiting for approval */
+.card-media .pill.flag-live { inset-inline-start: auto; inset-inline-end: 12px; background: var(--berry); color: #fff; }
+.upd-box { background: #fff; border: 1px solid rgb(232 80 138 / 0.35); border-radius: 16px; padding: 12px 16px; margin-bottom: 16px; }
+.upd-box h2 { margin: 0 0 8px; font-size: 15px; color: var(--berry); }
+.upd-box ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.upd-box li { border-top: 1px solid var(--line); padding-top: 10px; }
+.upd-box li:first-child { border-top: 0; padding-top: 0; }
+.upd-box small { color: var(--ink-2); font-size: 12px; }
+.upd-box p { margin: 4px 0 8px; font-size: 14.5px; line-height: 1.9; }
+.upd-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.upd-src { font-size: 12px; color: var(--ink-2); }
+
+/* Awards calendar and Telegram setup */
+.ev-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 12px; align-items: end; margin-top: 8px; }
+.ev-form label { display: grid; gap: 4px; font-size: 12.5px; color: var(--ink-2); }
+.ev-form input, .ev-form select { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.ev-edit summary { cursor: pointer; font-size: 12.5px; color: var(--ink-2); margin-top: 4px; }
+.ev-new { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; margin-top: 16px; }
+.ev-new h2 { margin: 0; font-size: 15px; }
+.tg-steps { display: grid; gap: 10px; padding-inline-start: 22px; font-size: 14px; line-height: 1.9; }
+.tg-steps .done { color: #2f7d68; }

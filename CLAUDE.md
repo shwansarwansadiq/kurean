@@ -41,16 +41,24 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
   `migrate-006-chart.sql` (`chart_weeks`, `chart_songs`), `migrate-007-listen.sql` (YouTube/Spotify ids),
   `migrate-008-chart-story.sql` (`stories.kind`, `chart_week`, `chart_top`), `migrate-009-video.sql` (video, tiktok_done),
   `migrate-010-schedule.sql` (`scheduled_at`), `migrate-011-scenery.sql` (`scenery`, `social_queue`),
-  `migrate-012-scenery-source.sql` (`scenery.source`), `migrate-013-reels.sql` (`reel_status`, `reel_story`, `reel_posted_at`), `migrate-014-scenery-feed.sql` (`scenery_feed`, `scenery.feed_posted_at`), `migrate-015-tiktok.sql` (`tiktok_auth`, `stories.tiktok_*`), `migrate-016-roundup.sql` (`roundups`). Env also: `META_TOKEN`.
+  `migrate-012-scenery-source.sql` (`scenery.source`), `migrate-013-reels.sql` (`reel_status`, `reel_story`, `reel_posted_at`), `migrate-014-scenery-feed.sql` (`scenery_feed`, `scenery.feed_posted_at`), `migrate-015-tiktok.sql` (`tiktok_auth`, `stories.tiktok_*`), `migrate-016-roundup.sql` (`roundups`), `migrate-017-fast-news.sql` (urgent, live updates, `story_updates`, `events`, `alerts`, `kurean-news` job). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
 
 ## Pipeline (src/lib)
 
-1. `collector.ts` — every 20 min: reads active RSS sources, skips duplicates (canonical URL hash) and items
+**News all day (Shwan, 17 Nov):** one chain, `/api/cron/news` (Supabase job `kurean-news` every 5 min; it works every
+15 min, or on every call while an event in `events` is on — 1 h before to 3 h after): live stories → collect → score →
+write → photos. `?force=1` runs it at once. The old `/api/cron/collect` and `/write` routes remain for manual use.
+1. `collector.ts` — reads active RSS sources, skips duplicates (canonical URL hash) and items
    older than 48 h, stores `raw_items` with status `new`.
-2. `writer.ts` → `scoreNew` — hourly at :10: Claude Haiku scores up to 40 new headlines 0–10, sets category
-   (`kpop`, `kdrama_film`, `culture`, `korea_news`) and a sensitive flag; ≥7 becomes `scored`, else `skipped`.
-3. `writer.ts` → `writeBest` — writes at most 2 per run and 8 per day into `stories` (status `pending`):
+2. `writer.ts` → `scoreNew` — Claude Haiku scores up to 40 new headlines 0–10, sets category
+   (`kpop`, `kdrama_film`, `culture`, `korea_news`), a sensitive flag and an **urgent** flag (results, official
+   announcements); ≥7 (urgent ≥6) becomes `scored`, else `skipped`.
+3. `writer.ts` → `writeBest` — urgent first (own reserve `KUREAN_URGENT_LIMIT` 10/day, 2 per run), then ordinary
+   (`KUREAN_DAILY_LIMIT` 12/day **spread over the day**: `allowedSoFar`, 15 % at 07:00 Hawler rising to 100 % at 22:00;
+   2 per run). Items are claimed (`writing`, released after 15 min). **7-day repeat check** (`repeatCheck`, Haiku, live
+   stories first): duplicate → skipped; update of a published story → `story_updates` (pending, `lib/updates.ts`);
+   update of an unpublished story → folded in and rewritten; new → written into `stories` (status `pending`):
    headline, card_headline, body, 3 key_points, Instagram/Facebook/TikTok captions, hashtags, sources.
    **Same-story check (`cluster.ts`):** before writing, finds headlines from other sources in the last 48 h that
    share ≥2 meaningful words, and Haiku confirms which are the same news. Then:
@@ -59,11 +67,20 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
      (`[{name,url,trust}]`), `source_name/source_url` = the most trusted, most detailed one;
    - total source text under 120 chars across all reports → skip as "no source text" (never pad).
    `needs_second_source` is true only for sensitive stories with a single source below trust 3.
+   Every new story and update is sent to Shwan on **Telegram** (`lib/telegram.ts`, `/api/telegram` webhook with a secret
+   header derived from CRON_SECRET, only `TELEGRAM_CHAT_ID` may act; env `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`;
+   /admin/telegram connects and tests): buttons publish now (website+IG+FB+TikTok), schedule next slot, skip; sensitive
+   stories needing a second source and agency photos only get "open in dashboard".
+   **Live stories / updates:** an approved update is appended to `stories.updates`, sets `live_until` (+12 h; the article
+   shows "ڕاستەوخۆ" and the updates above the body) and posts `/card/<id>?f=story&u=<n>` as IG/FB stories.
+   **Awards calendar** (`lib/events.ts`, /admin/events, seeded from Soompi's 2026 year-end guide): for `awards` events a
+   pending live story is written 2 h before the start (`event_id`, urgent); winners attach to it as updates.
 4. `callTool` forces tool use, and falls back to `tool_choice: auto` for models that refuse a forced tool
    (the Sonnet writer does).
 5. Prompts and output schemas live in `prompts.ts`; tests in `tests/` (`npm test`).
 6. Run a job by hand from the Supabase SQL editor without exposing the secret:
-   `do $$ begin execute (select command from cron.job where jobname = 'kurean-write'); end $$;`
+   `do $$ begin execute (select command from cron.job where jobname = 'kurean-news'); end $$;` (since 17 Nov;
+   migrations that need the bearer read it from `kurean-news`)
    Results: `select status_code, content from net._http_response order by created desc limit 1;`
    Errors: Vercel → project → Logs.
 

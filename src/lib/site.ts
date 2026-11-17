@@ -36,10 +36,13 @@ export type Story = {
   chart_top?: { rank: number; title: string; artist: string; artist_ckb: string | null; move: "up" | "down" | "same" | "new"; change: number }[] | null;
   published_at: string | null;
   created_at: string;
+  /** Approved updates (live stories), oldest first, and until when the story shows as live. */
+  updates?: { at: string; text: string; card: string; sources: SourceRef[] }[];
+  live_until?: string | null;
 };
 
 const LIST_FIELDS =
-  "id, category, headline, card_headline, body, key_points, source_name, source_url, sources, image_url, image_credit, image_source, gallery, kind, chart_week, chart_top, published_at, created_at";
+  "id, category, headline, card_headline, body, key_points, source_name, source_url, sources, image_url, image_credit, image_source, gallery, kind, chart_week, chart_top, published_at, created_at, updates, live_until";
 
 /** Published stories, newest first. */
 export async function publishedStories(opts: { limit?: number; category?: CategoryKey } = {}): Promise<Story[]> {

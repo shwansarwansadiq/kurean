@@ -1,3 +1,4 @@
+import { hawlerTime } from "@/lib/schedule";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -35,6 +36,7 @@ export default async function StoryPage({ params }: Params) {
   const next = others[0];
   const related = others.filter((s) => s.category === story.category).slice(0, 3);
   const sources = story.sources?.length ? story.sources : [{ name: story.source_name, url: story.source_url }];
+  const live = !!story.live_until && new Date(story.live_until).getTime() > Date.now();
 
   return (
     <>
@@ -49,9 +51,30 @@ export default async function StoryPage({ params }: Params) {
             <Bidi text={story.headline} />
           </h1>
           <p className="byline">
+            {live ? (
+              <span className="live-badge">
+                <i aria-hidden="true" />
+                ڕاستەوخۆ
+              </span>
+            ) : null}
             {soraniDate(story.published_at ?? story.created_at)} · کوریەن
           </p>
         </header>
+        {story.updates?.length ? (
+          <section className="art-updates" aria-label="نوێکارییەکان">
+            <h2>نوێکارییەکان</h2>
+            <ol>
+              {[...story.updates].reverse().map((u) => (
+                <li key={u.at}>
+                  <time dateTime={u.at}>{hawlerTime(u.at)}</time>
+                  <p>
+                    <Bidi text={u.text} />
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
         <div className="art-body">
           {paragraphs(story.body).map((p, i) => (
             <p key={i}>

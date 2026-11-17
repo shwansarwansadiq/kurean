@@ -82,7 +82,8 @@ function ChartCard({ story, format, h }: { story: CardStory; format: "feed" | "s
   );
 }
 
-export function SocialCard({ story, format, full = false }: { story: CardStory; format: "feed" | "story"; full?: boolean }) {
+/** `update`: an approved update's card text (live stories): the card leads with it, the story's headline above it. */
+export function SocialCard({ story, format, full = false, update }: { story: CardStory; format: "feed" | "story"; full?: boolean; update?: string }) {
   const meta = CATEGORY_META[story.category];
   const h = format === "feed" ? 1350 : 1920;
   const card = story.kind === "chart" && story.chart_top?.length ? <ChartCard story={story} format={format} h={h} /> : (
@@ -103,11 +104,16 @@ export function SocialCard({ story, format, full = false }: { story: CardStory; 
               kur<i>ean</i>
             </span>
           </span>
-          <span className="sc-chip glass">{meta.label}</span>
+          {update ? <span className="sc-chip sc-live">نوێکاری · ڕاستەوخۆ</span> : <span className="sc-chip glass">{meta.label}</span>}
         </div>
         <div className="sc-panel glass">
+          {update ? (
+            <p className="sc-was">
+              <Bidi text={story.card_headline} />
+            </p>
+          ) : null}
           <h3>
-            <Bidi text={story.card_headline} />
+            <Bidi text={update ?? story.card_headline} />
           </h3>
           <div className="sc-foot">
             <span className="sc-more">زانیاری زیاتر لە</span>

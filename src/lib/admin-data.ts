@@ -12,6 +12,8 @@ export const PLATFORM_LABEL: Record<(typeof PLATFORMS)[number], string> = {
 
 export type AdminStory = {
   id: number;
+  urgent?: boolean;
+  event_id?: number | null;
   category: CategoryKey;
   headline: string;
   card_headline: string;

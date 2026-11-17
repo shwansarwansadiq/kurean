@@ -24,6 +24,7 @@ export function StoryCard({ story, nextSlot }: { story: AdminStory; nextSlot: Da
           </div>
         )}
         <span className="pill glass">{meta.label}</span>
+        {story.event_id ? <span className="pill flag-live">ڕاستەوخۆ · ئاهەنگ</span> : story.urgent ? <span className="pill flag-live">خێرا</span> : null}
         {story.image_credit ? <span className="card-credit glass">وێنە: <bdi>{story.image_credit}</bdi></span> : null}
       </div>
       <div className="card-in">
