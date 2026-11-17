@@ -118,7 +118,9 @@ challenge solving). If a feed blocks automated readers, pause it, ask the publis
   4. **Takedowns:** Kurean removes any copyrighted photo or text as soon as it is warned. In /admin: Edit → remove
      photo (it stays removed; the story falls back to the branded card). Article pages tell rights holders to message
      @kurean.news. Never work around a site's refusal to serve a photo.
-- Group and artist names stay in Latin letters, with the Sorani spelling in brackets the first time.
+- Names (Shwan, 17 Nov): groups and companies stay in Latin letters with the Sorani spelling in brackets the first time
+  (BTS (بی تی ئێس)) — only they get a Sorani spelling. Titles of shows, dramas, films, albums and songs stay in Latin
+  in «», never spelled out in Sorani; a Kurdish translation of the meaning in brackets is allowed. People: Latin only.
 - Glossary spellings are mandatory (table `glossary`; the plan doc's Glossary tab is the human-edited copy).
   Example: fandom → کۆمەڵەی هەواداران in articles, فاندۆم allowed in casual captions.
 - Tone: friendly, well-informed fan friend, accurate. No emoji in headlines or body; 1–3 in captions.

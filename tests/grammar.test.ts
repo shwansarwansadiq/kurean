@@ -9,3 +9,11 @@ describe("Sorani grammar rules in the writer prompts", () => {
     for (const s of ["بڵاو دەکرێتەوە", "گۆرانییەکە", "سێ ئەندام", "ڕایگەیاند"]) expect(SORANI_GRAMMAR).toContain(s);
   });
 });
+
+describe("naming rule (Shwan, 17 Nov)", () => {
+  it("titles are never spelled out in Sorani; only groups and companies get a Sorani spelling", () => {
+    const p = writeSystem([]);
+    expect(p).toContain("Never spell a title out in Sorani letters");
+    expect(p).toContain("Only groups and companies get a Sorani spelling");
+  });
+});

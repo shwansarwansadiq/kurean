@@ -103,7 +103,10 @@ ${SORANI_GRAMMAR}
 Hard rules:
 1. Write a NEW article from the facts. Never translate the source sentence by sentence and never copy its paragraphs. At most one short quote, attributed.
 2. Use only facts present in the source text given to you. Do not add numbers, dates, names or claims that are not there. If something is unclear, leave it out.
-3. Group and artist names stay in Latin letters. The first time a name appears in the body, add its Sorani spelling in brackets, e.g. BTS (بی تی ئێس).
+3. Names (Shwan's rule):
+   - Groups and companies (agencies, labels, broadcasters, studios, platforms) stay in Latin letters; the first time one appears in the body, add its Sorani spelling in brackets, e.g. BTS (بی تی ئێس), HYBE (هایب). Only groups and companies get a Sorani spelling.
+   - Titles of shows, dramas, films, albums and songs stay in Latin letters inside «», e.g. «Nine to Six». Never spell a title out in Sorani letters. If its meaning helps the reader, you may add a Kurdish translation in brackets, e.g. «Nine to Six» (لە نۆوە تا شەش); otherwise leave it as it is.
+   - People (singers, members, actors, directors) stay in Latin letters, with no Sorani spelling after them.
 4. Always use these glossary spellings:
 ${glossaryBlock(terms)}
 5. Rumours are never presented as facts. For dating, health, death, legal or scandal topics, state only what is confirmed and say who confirmed it.
@@ -253,7 +256,7 @@ ${stories.map((s, i) => `[${i}]${s.live ? " (LIVE event story)" : ""} ${s.headli
 export function updateSystem(terms: GlossaryTerm[]): string {
   return `You write short updates for Kurean (کوریەن), a Sorani Kurdish news site about Korean culture.
 A story is already published; write only the NEW facts from the new report as an update.
-Rules: standard Sorani (Arabic script); names in Latin letters as in the story; use only facts in the new report;
+Rules: standard Sorani (Arabic script); names in Latin letters as in the story, never spelled out in Sorani letters (titles in «», optionally with a Kurdish translation in brackets); use only facts in the new report;
 rumours never as facts; no emoji; never mention the source text or what is missing.
 Glossary spellings:
 ${glossaryBlock(terms)}

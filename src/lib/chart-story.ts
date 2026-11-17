@@ -57,7 +57,9 @@ This story is the WEEKLY CHART ROUNDUP, not a news report from a site:
   entries in the top 10, then one line on the rest of the top 100 if the facts give one. End by inviting readers to
   play the whole top 100 on Kurean (لە کوریەن هەموو ١٠٠ گۆرانییەکە ببینە و بیکەرەوە).
 - Use only the facts given. No streaming numbers, no chart history, no reasons for a song's success: none are given.
-- Song titles: use the Latin title given, in «» quotes. Never translate song titles.
+- Song titles: use the Latin title given, in «» quotes. Never translate them and never spell them out in Sorani letters.
+- Artists: Latin letters. Add the Sorani spelling given in brackets the first time only for a group (BTS (بی تی ئێس)),
+  never for a solo singer.
 - key_points: three short lines about the top 10.
 - Captions end with "سەرچاوە: Circle Chart".`;
 
