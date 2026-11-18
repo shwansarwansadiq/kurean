@@ -134,10 +134,32 @@ export async function download(imageUrl: string): Promise<Downloaded | null> {
   return { bytes, type, ext, width: size?.width ?? 0, height: size?.height ?? 0 };
 }
 
+/** Long side of a stored photo: enough for 1080 px cards and the article, small enough for phones (Shwan, 19 Nov:
+ *  Supabase free plan egress — 7 MB originals were downloaded by every visitor). */
+export const STORE_MAX_SIDE = 1600;
+
+/** Big photos become a ≤1600 px JPEG; small ones are kept exactly as they are. */
+async function shrink(d: Downloaded): Promise<Pick<Downloaded, "bytes" | "type" | "ext">> {
+  if (Math.max(d.width, d.height) <= STORE_MAX_SIDE && d.bytes.length <= 700_000) return d;
+  try {
+    const sharp = (await import("sharp")).default;
+    const out = await sharp(d.bytes)
+      .rotate()
+      .resize({ width: STORE_MAX_SIDE, height: STORE_MAX_SIDE, fit: "inside", withoutEnlargement: true })
+      .flatten({ background: "#ffffff" })
+      .jpeg({ quality: 84, mozjpeg: true })
+      .toBuffer();
+    return out.length < d.bytes.length ? { bytes: new Uint8Array(out), type: "image/jpeg", ext: "jpg" } : d;
+  } catch {
+    return d;
+  }
+}
+
 /** Copies a downloaded photo into our storage, so the site and cards never depend on another server. */
 export async function store(d: Downloaded, key: string): Promise<string | null> {
-  const path = `${key}-${Date.now().toString(36)}.${d.ext}`;
-  const { error } = await db().storage.from(BUCKET).upload(path, d.bytes, { contentType: d.type, upsert: true });
+  const s = await shrink(d);
+  const path = `${key}-${Date.now().toString(36)}.${s.ext}`;
+  const { error } = await db().storage.from(BUCKET).upload(path, s.bytes, { contentType: s.type, upsert: true });
   if (error) return null;
   return db().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }

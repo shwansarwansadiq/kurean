@@ -43,6 +43,11 @@ Build phases 3 and 4 together so the first story on the public site is one Shwan
   `migrate-010-schedule.sql` (`scheduled_at`), `migrate-011-scenery.sql` (`scenery`, `social_queue`),
   `migrate-012-scenery-source.sql` (`scenery.source`), `migrate-013-reels.sql` (`reel_status`, `reel_story`, `reel_posted_at`), `migrate-014-scenery-feed.sql` (`scenery_feed`, `scenery.feed_posted_at`), `migrate-015-tiktok.sql` (`tiktok_auth`, `stories.tiktok_*`), `migrate-016-roundup.sql` (`roundups`), `migrate-017-fast-news.sql` (urgent, live updates, `story_updates`, `events`, `alerts`, `kurean-news` job). Env also: `META_TOKEN`.
 - Next.js must stay on a patched version: Vercel blocks deploys of vulnerable releases.
+- **Usage limits (19 Nov):** Supabase went over the free plan (cached egress 11.8 GB of 5 GB, storage 2.2 GB of 1 GB:
+  old video versions + 7 MB original photos); Shwan chose to upgrade the org to Pro. `lib/cleanup.ts` removes video files
+  nothing points to (daily inside the chart job, or `/api/cron/cleanup`); `photo.ts` stores photos as ≤1600 px JPEGs.
+  Vercel Hobby: Fluid Active CPU was 3 h of 4 h per 30 days; the `kurean-news` job now calls the site only every
+  15 min or during an event window (the condition is in the cron command itself).
 
 ## Pipeline (src/lib)
 
